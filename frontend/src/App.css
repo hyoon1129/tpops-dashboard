@@ -1,0 +1,160 @@
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+  width: 100%;
+  flex-direction: column;
+  gap: 18px;
+  padding: 28px;
+  box-sizing: border-box;
+}
+
+.topbar,
+.toolbar,
+.table-panel {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 22px 24px;
+}
+
+.subtitle {
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.toolbar {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(160px, 0.7fr) minmax(260px, 2fr) auto;
+  gap: 12px;
+  padding: 16px;
+  align-items: end;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+select,
+input {
+  height: 40px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--field-bg);
+  color: var(--text);
+  padding: 0 11px;
+  font: inherit;
+  box-sizing: border-box;
+}
+
+.primary-button,
+.secondary-button,
+.tabs button {
+  height: 40px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  padding: 0 14px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.primary-button {
+  background: var(--accent);
+  color: #fff;
+}
+
+.secondary-button,
+.tabs button {
+  background: var(--field-bg);
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tabs button.active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-bg);
+}
+
+.table-panel {
+  overflow: hidden;
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.panel-header p {
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+.status-pill {
+  align-self: flex-start;
+  border-radius: 999px;
+  background: var(--accent-bg);
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 5px 10px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  border-bottom: 1px solid var(--border);
+  padding: 13px 16px;
+  text-align: left;
+}
+
+th {
+  background: var(--table-head);
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+td {
+  color: var(--text);
+}
+
+@media (max-width: 860px) {
+  .app-shell {
+    padding: 16px;
+  }
+
+  .topbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .toolbar {
+    grid-template-columns: 1fr;
+  }
+}
