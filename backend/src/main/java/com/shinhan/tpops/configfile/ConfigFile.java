@@ -94,6 +94,28 @@ public class ConfigFile {
 		this.parseStatus = ParseStatus.PENDING;
 	}
 
+	public void markNotCurrent() {
+		this.current = false;
+	}
+
+	public void markSuccess() {
+		this.parseStatus = ParseStatus.SUCCESS;
+		this.errorMessage = null;
+		this.parsedAt = LocalDateTime.now();
+	}
+
+	public void markSkipped() {
+		this.parseStatus = ParseStatus.SKIPPED;
+		this.errorMessage = null;
+		this.parsedAt = LocalDateTime.now();
+	}
+
+	public void markFailed(String errorMessage) {
+		this.parseStatus = ParseStatus.FAILED;
+		this.errorMessage = errorMessage;
+		this.parsedAt = LocalDateTime.now();
+	}
+
 	@PrePersist
 	void prePersist() {
 		this.uploadedAt = LocalDateTime.now();

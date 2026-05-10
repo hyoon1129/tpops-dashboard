@@ -1,5 +1,6 @@
 package com.shinhan.tpops.gatewayconfig;
 
+import com.shinhan.tpops.common.ConfigValues;
 import com.shinhan.tpops.configfile.ConfigFile;
 import com.shinhan.tpops.nodeconfig.NodeConfig;
 import jakarta.persistence.Column;
@@ -13,6 +14,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+import java.util.Map;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -76,6 +78,24 @@ public class GatewayConfig {
 
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private LocalDateTime createdAt;
+
+	public GatewayConfig(ConfigFile configFile, NodeConfig nodeConfig, String gatewayName, Map<String, String> values, Integer startLine, Integer endLine) {
+		this.configFile = configFile;
+		this.nodeConfig = nodeConfig;
+		this.gatewayName = gatewayName;
+		this.gwtype = ConfigValues.stringValue(values, "GWTYPE");
+		this.nodename = ConfigValues.stringValue(values, "NODENAME");
+		this.portno = ConfigValues.integerValue(values, "PORTNO");
+		this.rgwportno = ConfigValues.integerValue(values, "RGWPORTNO");
+		this.rgwaddr = ConfigValues.stringValue(values, "RGWADDR");
+		this.cpc = ConfigValues.integerValue(values, "CPC");
+		this.clopt = ConfigValues.stringValue(values, "CLOPT");
+		this.loadValue = ConfigValues.integerValue(values, "LOAD");
+		this.backupRgwaddr = ConfigValues.stringValue(values, "BACKUP_RGWADDR");
+		this.backupRgwportno = ConfigValues.integerValue(values, "BACKUP_RGWPORTNO");
+		this.startLine = startLine;
+		this.endLine = endLine;
+	}
 
 	@PrePersist
 	void prePersist() {

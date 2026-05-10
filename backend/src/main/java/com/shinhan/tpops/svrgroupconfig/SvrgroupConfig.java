@@ -1,5 +1,6 @@
 package com.shinhan.tpops.svrgroupconfig;
 
+import com.shinhan.tpops.common.ConfigValues;
 import com.shinhan.tpops.configfile.ConfigFile;
 import com.shinhan.tpops.nodeconfig.NodeConfig;
 import com.shinhan.tpops.serverconfig.ServerConfig;
@@ -17,6 +18,7 @@ import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -69,6 +71,19 @@ public class SvrgroupConfig {
 
 	@OneToMany(mappedBy = "svrgroupConfig")
 	private List<ServerConfig> serverConfigs = new ArrayList<>();
+
+	public SvrgroupConfig(ConfigFile configFile, NodeConfig nodeConfig, String svrgroupName, Map<String, String> values, Integer startLine, Integer endLine) {
+		this.configFile = configFile;
+		this.nodeConfig = nodeConfig;
+		this.svrgroupName = svrgroupName;
+		this.nodename = ConfigValues.stringValue(values, "NODENAME");
+		this.cousin = ConfigValues.stringValue(values, "COUSIN");
+		this.loadValue = ConfigValues.integerValue(values, "LOAD");
+		this.backup = ConfigValues.stringValue(values, "BACKUP");
+		this.envfile = ConfigValues.stringValue(values, "ENVFILE");
+		this.startLine = startLine;
+		this.endLine = endLine;
+	}
 
 	@PrePersist
 	void prePersist() {

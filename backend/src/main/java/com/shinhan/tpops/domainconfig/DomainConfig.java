@@ -1,6 +1,7 @@
 package com.shinhan.tpops.domainconfig;
 
 import com.shinhan.tpops.configfile.ConfigFile;
+import com.shinhan.tpops.common.ConfigValues;
 import com.shinhan.tpops.nodeconfig.NodeConfig;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -16,6 +17,7 @@ import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -85,6 +87,38 @@ public class DomainConfig {
 
 	@OneToMany(mappedBy = "domainConfig")
 	private List<NodeConfig> nodeConfigs = new ArrayList<>();
+
+	public DomainConfig(ConfigFile configFile, String domainName, Map<String, String> values, Integer startLine, Integer endLine) {
+		this.configFile = configFile;
+		this.domainName = domainName;
+		this.domainId = ConfigValues.integerValue(values, "DOMAINID");
+		this.shmkey = ConfigValues.stringValue(values, "SHMKEY");
+		this.maxuser = ConfigValues.integerValue(values, "MAXUSER");
+		this.minclh = ConfigValues.integerValue(values, "MINCLH");
+		this.maxclh = ConfigValues.integerValue(values, "MAXCLH");
+		this.tportno = ConfigValues.integerValue(values, "TPORTNO");
+		this.racport = ConfigValues.integerValue(values, "RACPORT");
+		this.blocktime = ConfigValues.integerValue(values, "BLOCKTIME");
+		this.maxsvg = ConfigValues.integerValue(values, "MAXSVG");
+		this.maxsvr = ConfigValues.integerValue(values, "MAXSVR");
+		this.maxspr = ConfigValues.integerValue(values, "MAXSPR");
+		this.maxsvc = ConfigValues.integerValue(values, "MAXSVC");
+		this.maxsacall = ConfigValues.integerValue(values, "MAXSACALL");
+		this.maxcacall = ConfigValues.integerValue(values, "MAXCACALL");
+		this.maxtotalsvg = ConfigValues.integerValue(values, "MAXTOTALSVG");
+		this.maxgw = ConfigValues.integerValue(values, "MAXGW");
+		this.maxcpc = ConfigValues.integerValue(values, "MAXCPC");
+		this.maxcousin = ConfigValues.integerValue(values, "MAXCOUSIN");
+		this.maxcousinsvg = ConfigValues.integerValue(values, "MAXCOUSINSVG");
+		this.gwchkint = ConfigValues.integerValue(values, "GWCHKINT");
+		this.gwconnectTimeout = ConfigValues.integerValue(values, "GWCONNECT_TIMEOUT");
+		this.nclhchktime = ConfigValues.integerValue(values, "NCLHCHKTIME");
+		this.nliveinq = ConfigValues.integerValue(values, "NLIVEINQ");
+		this.ipcperm = ConfigValues.stringValue(values, "IPCPERM");
+		this.maxnode = ConfigValues.integerValue(values, "MAXNODE");
+		this.startLine = startLine;
+		this.endLine = endLine;
+	}
 
 	@PrePersist
 	void prePersist() {

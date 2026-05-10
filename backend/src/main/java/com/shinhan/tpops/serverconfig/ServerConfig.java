@@ -1,5 +1,6 @@
 package com.shinhan.tpops.serverconfig;
 
+import com.shinhan.tpops.common.ConfigValues;
 import com.shinhan.tpops.configfile.ConfigFile;
 import com.shinhan.tpops.serviceconfig.ServiceConfig;
 import com.shinhan.tpops.svrgroupconfig.SvrgroupConfig;
@@ -17,6 +18,7 @@ import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -85,6 +87,27 @@ public class ServerConfig {
 
 	@OneToMany(mappedBy = "serverConfig")
 	private List<ServiceConfig> serviceConfigs = new ArrayList<>();
+
+	public ServerConfig(ConfigFile configFile, SvrgroupConfig svrgroupConfig, String serverName, Map<String, String> values, Integer startLine, Integer endLine) {
+		this.configFile = configFile;
+		this.svrgroupConfig = svrgroupConfig;
+		this.serverName = serverName;
+		this.svgname = ConfigValues.stringValue(values, "SVGNAME");
+		this.svrtype = ConfigValues.stringValue(values, "SVRTYPE");
+		this.clopt = ConfigValues.stringValue(values, "CLOPT");
+		this.minValue = ConfigValues.integerValue(values, "MIN");
+		this.maxValue = ConfigValues.integerValue(values, "MAX");
+		this.target = ConfigValues.stringValue(values, "TARGET");
+		this.schedule = ConfigValues.stringValue(values, "SCHEDULE");
+		this.maxqcount = ConfigValues.integerValue(values, "MAXQCOUNT");
+		this.cpc = ConfigValues.integerValue(values, "CPC");
+		this.asqcount = ConfigValues.integerValue(values, "ASQCOUNT");
+		this.restart = ConfigValues.stringValue(values, "RESTART");
+		this.maxrstart = ConfigValues.integerValue(values, "MAXRSTART");
+		this.gperiod = ConfigValues.integerValue(values, "GPERIOD");
+		this.startLine = startLine;
+		this.endLine = endLine;
+	}
 
 	@PrePersist
 	void prePersist() {

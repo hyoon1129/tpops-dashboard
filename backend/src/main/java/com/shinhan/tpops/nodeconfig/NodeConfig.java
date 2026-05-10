@@ -1,5 +1,6 @@
 package com.shinhan.tpops.nodeconfig;
 
+import com.shinhan.tpops.common.ConfigValues;
 import com.shinhan.tpops.configfile.ConfigFile;
 import com.shinhan.tpops.domainconfig.DomainConfig;
 import com.shinhan.tpops.gatewayconfig.GatewayConfig;
@@ -18,6 +19,7 @@ import jakarta.persistence.Table;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -94,6 +96,27 @@ public class NodeConfig {
 
 	@OneToMany(mappedBy = "nodeConfig")
 	private List<GatewayConfig> gatewayConfigs = new ArrayList<>();
+
+	public NodeConfig(ConfigFile configFile, DomainConfig domainConfig, String nodeName, Map<String, String> values, Integer startLine, Integer endLine) {
+		this.configFile = configFile;
+		this.domainConfig = domainConfig;
+		this.nodeName = nodeName;
+		this.hostname = ConfigValues.stringValue(values, "HOSTNAME");
+		this.tmaxdir = ConfigValues.stringValue(values, "TMAXDIR");
+		this.appdir = ConfigValues.stringValue(values, "APPDIR");
+		this.tmaxhome = ConfigValues.stringValue(values, "TMAXHOME");
+		this.pathdir = ConfigValues.stringValue(values, "PATHDIR");
+		this.tlogdir = ConfigValues.stringValue(values, "TLOGDIR");
+		this.ulogdir = ConfigValues.stringValue(values, "ULOGDIR");
+		this.slogdir = ConfigValues.stringValue(values, "SLOGDIR");
+		this.nodetype = ConfigValues.stringValue(values, "NODETYPE");
+		this.autobackup = ConfigValues.stringValue(values, "AUTOBACKUP");
+		this.maxgwcpc = ConfigValues.integerValue(values, "MAXGWCPC");
+		this.maxgwsvr = ConfigValues.integerValue(values, "MAXGWSVR");
+		this.clhopt = ConfigValues.stringValue(values, "CLHOPT");
+		this.startLine = startLine;
+		this.endLine = endLine;
+	}
 
 	@PrePersist
 	void prePersist() {

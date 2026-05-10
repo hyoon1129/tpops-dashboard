@@ -1,5 +1,6 @@
 package com.shinhan.tpops.serviceconfig;
 
+import com.shinhan.tpops.common.ConfigValues;
 import com.shinhan.tpops.businesscode.BusinessCode;
 import com.shinhan.tpops.configfile.ConfigFile;
 import com.shinhan.tpops.serverconfig.ServerConfig;
@@ -14,6 +15,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+import java.util.Map;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -57,6 +59,17 @@ public class ServiceConfig {
 
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private LocalDateTime createdAt;
+
+	public ServiceConfig(ConfigFile configFile, ServerConfig serverConfig, BusinessCode businessCode, String serviceName, Map<String, String> values, Integer startLine, Integer endLine) {
+		this.configFile = configFile;
+		this.serverConfig = serverConfig;
+		this.businessCode = businessCode;
+		this.serviceName = serviceName;
+		this.svrname = ConfigValues.stringValue(values, "SVRNAME");
+		this.svctime = ConfigValues.integerValue(values, "SVCTIME");
+		this.startLine = startLine;
+		this.endLine = endLine;
+	}
 
 	@PrePersist
 	void prePersist() {
