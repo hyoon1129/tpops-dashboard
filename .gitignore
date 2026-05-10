@@ -44,3 +44,8 @@ out/
 .DS_Store
 *.log
 .env
+
+### Frontend ###
+node_modules/
+dist/
+coverage/
