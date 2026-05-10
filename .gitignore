@@ -49,3 +49,5 @@ out/
 node_modules/
 dist/
 coverage/
+
+.codex-local/
