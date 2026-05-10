@@ -1,11 +1,15 @@
 package com.shinhan.tpops.businesscode;
 
+import com.shinhan.tpops.serviceconfig.ServiceConfig;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -25,6 +29,9 @@ public class BusinessCode {
 
 	@Column(name = "created_at", nullable = false, updatable = false)
 	private LocalDateTime createdAt;
+
+	@OneToMany(mappedBy = "businessCode")
+	private List<ServiceConfig> serviceConfigs = new ArrayList<>();
 
 	public BusinessCode(String code, String businessName) {
 		this.code = code;

@@ -1,6 +1,12 @@
 package com.shinhan.tpops.configfile;
 
 import com.shinhan.tpops.serverinfo.ServerInfo;
+import com.shinhan.tpops.domainconfig.DomainConfig;
+import com.shinhan.tpops.gatewayconfig.GatewayConfig;
+import com.shinhan.tpops.nodeconfig.NodeConfig;
+import com.shinhan.tpops.serverconfig.ServerConfig;
+import com.shinhan.tpops.serviceconfig.ServiceConfig;
+import com.shinhan.tpops.svrgroupconfig.SvrgroupConfig;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -11,9 +17,12 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -57,6 +66,24 @@ public class ConfigFile {
 
 	@Column(name = "parsed_at")
 	private LocalDateTime parsedAt;
+
+	@OneToMany(mappedBy = "configFile")
+	private List<DomainConfig> domainConfigs = new ArrayList<>();
+
+	@OneToMany(mappedBy = "configFile")
+	private List<NodeConfig> nodeConfigs = new ArrayList<>();
+
+	@OneToMany(mappedBy = "configFile")
+	private List<SvrgroupConfig> svrgroupConfigs = new ArrayList<>();
+
+	@OneToMany(mappedBy = "configFile")
+	private List<ServerConfig> serverConfigs = new ArrayList<>();
+
+	@OneToMany(mappedBy = "configFile")
+	private List<ServiceConfig> serviceConfigs = new ArrayList<>();
+
+	@OneToMany(mappedBy = "configFile")
+	private List<GatewayConfig> gatewayConfigs = new ArrayList<>();
 
 	public ConfigFile(ServerInfo serverInfo, String fileName, Integer versionNo, Boolean current, String fileHash) {
 		this.serverInfo = serverInfo;
