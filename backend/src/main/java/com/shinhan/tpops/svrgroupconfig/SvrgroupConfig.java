@@ -40,10 +40,10 @@ public class SvrgroupConfig {
 	@JoinColumn(name = "node_config_id")
 	private NodeConfig nodeConfig;
 
-	@Column(name = "svrgroup_name", length = 255)
+	@Column(name = "svrgroup_name", nullable = false, length = 255)
 	private String svrgroupName;
 
-	@Column(length = 255)
+	@Column(nullable = false, length = 255)
 	private String nodename;
 
 	@Column(length = 255)
@@ -58,10 +58,10 @@ public class SvrgroupConfig {
 	@Column(length = 500)
 	private String envfile;
 
-	@Column(name = "start_line")
+	@Column(name = "start_line", nullable = false)
 	private Integer startLine;
 
-	@Column(name = "end_line")
+	@Column(name = "end_line", nullable = false)
 	private Integer endLine;
 
 	@Column(name = "created_at", nullable = false, updatable = false)

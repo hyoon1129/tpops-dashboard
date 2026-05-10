@@ -51,7 +51,7 @@ public class ConfigFile {
 	@Column(name = "is_current", nullable = false)
 	private Boolean current;
 
-	@Column(name = "file_hash", length = 128)
+	@Column(name = "file_hash", nullable = false, length = 128)
 	private String fileHash;
 
 	@Column(name = "uploaded_at", nullable = false, updatable = false)

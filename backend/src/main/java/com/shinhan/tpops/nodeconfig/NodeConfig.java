@@ -41,16 +41,16 @@ public class NodeConfig {
 	@JoinColumn(name = "domain_config_id")
 	private DomainConfig domainConfig;
 
-	@Column(name = "node_name", length = 255)
+	@Column(name = "node_name", nullable = false, length = 255)
 	private String nodeName;
 
 	@Column(length = 255)
 	private String hostname;
 
-	@Column(length = 500)
+	@Column(nullable = false, length = 500)
 	private String tmaxdir;
 
-	@Column(length = 500)
+	@Column(nullable = false, length = 500)
 	private String appdir;
 
 	@Column(length = 500)
@@ -80,10 +80,10 @@ public class NodeConfig {
 	@Column(columnDefinition = "TEXT")
 	private String clhopt;
 
-	@Column(name = "start_line")
+	@Column(name = "start_line", nullable = false)
 	private Integer startLine;
 
-	@Column(name = "end_line")
+	@Column(name = "end_line", nullable = false)
 	private Integer endLine;
 
 	@Column(name = "created_at", nullable = false, updatable = false)

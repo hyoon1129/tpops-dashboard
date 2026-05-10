@@ -35,13 +35,13 @@ public class DomainConfig {
 	@JoinColumn(name = "file_id", nullable = false)
 	private ConfigFile configFile;
 
-	@Column(name = "domain_name", length = 255)
+	@Column(name = "domain_name", nullable = false, length = 255)
 	private String domainName;
 
 	@Column(name = "domain_id")
 	private Integer domainId;
 
-	@Column(length = 50)
+	@Column(nullable = false, length = 50)
 	private String shmkey;
 
 	private Integer maxuser;
@@ -74,10 +74,10 @@ public class DomainConfig {
 
 	private Integer maxnode;
 
-	@Column(name = "start_line")
+	@Column(name = "start_line", nullable = false)
 	private Integer startLine;
 
-	@Column(name = "end_line")
+	@Column(name = "end_line", nullable = false)
 	private Integer endLine;
 
 	@Column(name = "created_at", nullable = false, updatable = false)

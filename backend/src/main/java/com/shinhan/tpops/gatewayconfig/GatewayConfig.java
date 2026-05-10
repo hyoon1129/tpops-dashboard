@@ -36,19 +36,22 @@ public class GatewayConfig {
 	@JoinColumn(name = "node_config_id")
 	private NodeConfig nodeConfig;
 
-	@Column(name = "gateway_name", length = 255)
+	@Column(name = "gateway_name", nullable = false, length = 255)
 	private String gatewayName;
 
-	@Column(length = 100)
+	@Column(nullable = false, length = 100)
 	private String gwtype;
 
-	@Column(length = 255)
+	@Column(nullable = false, length = 255)
 	private String nodename;
 
+	@Column(nullable = false)
 	private Integer portno;
+
+	@Column(nullable = false)
 	private Integer rgwportno;
 
-	@Column(length = 255)
+	@Column(nullable = false, length = 255)
 	private String rgwaddr;
 
 	private Integer cpc;
@@ -65,10 +68,10 @@ public class GatewayConfig {
 	@Column(name = "backup_rgwportno")
 	private Integer backupRgwportno;
 
-	@Column(name = "start_line")
+	@Column(name = "start_line", nullable = false)
 	private Integer startLine;
 
-	@Column(name = "end_line")
+	@Column(name = "end_line", nullable = false)
 	private Integer endLine;
 
 	@Column(name = "created_at", nullable = false, updatable = false)

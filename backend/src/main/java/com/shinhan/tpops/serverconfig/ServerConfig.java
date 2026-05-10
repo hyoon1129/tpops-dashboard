@@ -40,10 +40,10 @@ public class ServerConfig {
 	@JoinColumn(name = "svrgroup_config_id")
 	private SvrgroupConfig svrgroupConfig;
 
-	@Column(name = "server_name", length = 255)
+	@Column(name = "server_name", nullable = false, length = 255)
 	private String serverName;
 
-	@Column(length = 255)
+	@Column(nullable = false, length = 255)
 	private String svgname;
 
 	@Column(length = 100)
@@ -74,10 +74,10 @@ public class ServerConfig {
 	private Integer maxrstart;
 	private Integer gperiod;
 
-	@Column(name = "start_line")
+	@Column(name = "start_line", nullable = false)
 	private Integer startLine;
 
-	@Column(name = "end_line")
+	@Column(name = "end_line", nullable = false)
 	private Integer endLine;
 
 	@Column(name = "created_at", nullable = false, updatable = false)

@@ -37,10 +37,10 @@ public class ServiceConfig {
 	@JoinColumn(name = "server_config_id")
 	private ServerConfig serverConfig;
 
-	@Column(name = "service_name", length = 255)
+	@Column(name = "service_name", nullable = false, length = 255)
 	private String serviceName;
 
-	@Column(length = 255)
+	@Column(nullable = false, length = 255)
 	private String svrname;
 
 	private Integer svctime;
@@ -49,10 +49,10 @@ public class ServiceConfig {
 	@JoinColumn(name = "business_code")
 	private BusinessCode businessCode;
 
-	@Column(name = "start_line")
+	@Column(name = "start_line", nullable = false)
 	private Integer startLine;
 
-	@Column(name = "end_line")
+	@Column(name = "end_line", nullable = false)
 	private Integer endLine;
 
 	@Column(name = "created_at", nullable = false, updatable = false)
