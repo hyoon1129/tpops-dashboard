@@ -353,6 +353,77 @@
   scrollbar-width: thin;
 }
 
+.search-results {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 14px;
+  background: #08090a;
+}
+
+.search-section {
+  overflow: hidden;
+  border: 1px solid #2b2d33;
+  border-radius: 10px;
+  background: #0f1011;
+}
+
+.search-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 16px;
+  padding: 15px 18px;
+  border-bottom: 1px solid #2b2d33;
+  background: #17181b;
+}
+
+.search-section-header h3 {
+  margin: 0;
+  color: #f7f8f8;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.search-section-header p {
+  margin: 4px 0 0;
+  color: #8a8f98;
+  font-size: 11px;
+}
+
+.search-section-header button {
+  margin-left: auto;
+  height: 30px;
+  border: 1px solid rgba(94, 106, 210, 0.82);
+  border-radius: 8px;
+  background: rgba(94, 106, 210, 0.18);
+  color: #e3e6ff;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.search-section-header button:hover {
+  border-color: #8791ff;
+  background: rgba(94, 106, 210, 0.3);
+}
+
+.search-section-header::before {
+  content: '';
+  width: 3px;
+  align-self: stretch;
+  border-radius: 999px;
+  background: #5e6ad2;
+}
+
+.search-table-scroll {
+  overflow-x: auto;
+  scrollbar-color: #3e3e44 #0f1011;
+  scrollbar-width: thin;
+}
+
 .empty-state {
   padding: 28px 18px;
   color: #8a8f98;
@@ -435,6 +506,13 @@ tbody tr:hover td:first-child {
 td strong {
   color: #f7f8f8;
   font-weight: 650;
+}
+
+mark {
+  border-radius: 4px;
+  background: rgba(245, 196, 81, 0.22);
+  color: #ffd979;
+  padding: 0 2px;
 }
 
 @media (max-width: 1100px) {
