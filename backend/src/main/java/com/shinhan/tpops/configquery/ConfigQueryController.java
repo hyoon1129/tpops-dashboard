@@ -2,6 +2,7 @@ package com.shinhan.tpops.configquery;
 
 import java.util.List;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Sort;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -29,9 +30,11 @@ public class ConfigQueryController {
 	public PageResponse<DomainConfigResponse> findDomains(
 		@PathVariable Long serverId,
 		@RequestParam(defaultValue = "0") int page,
-		@RequestParam(defaultValue = "100") int size
+		@RequestParam(defaultValue = "100") int size,
+		@RequestParam(defaultValue = "id") String sort,
+		@RequestParam(defaultValue = "ASC") Sort.Direction direction
 	) {
-		return configQueryService.findDomains(serverId, page, size);
+		return configQueryService.findDomains(serverId, page, size, sort, direction);
 	}
 
 	@GetMapping("/nodes")
@@ -43,9 +46,11 @@ public class ConfigQueryController {
 	public PageResponse<NodeConfigResponse> findNodes(
 		@PathVariable Long serverId,
 		@RequestParam(defaultValue = "0") int page,
-		@RequestParam(defaultValue = "100") int size
+		@RequestParam(defaultValue = "100") int size,
+		@RequestParam(defaultValue = "id") String sort,
+		@RequestParam(defaultValue = "ASC") Sort.Direction direction
 	) {
-		return configQueryService.findNodes(serverId, page, size);
+		return configQueryService.findNodes(serverId, page, size, sort, direction);
 	}
 
 	@GetMapping("/svrgroups")
@@ -57,9 +62,11 @@ public class ConfigQueryController {
 	public PageResponse<SvrgroupConfigResponse> findSvrgroups(
 		@PathVariable Long serverId,
 		@RequestParam(defaultValue = "0") int page,
-		@RequestParam(defaultValue = "100") int size
+		@RequestParam(defaultValue = "100") int size,
+		@RequestParam(defaultValue = "id") String sort,
+		@RequestParam(defaultValue = "ASC") Sort.Direction direction
 	) {
-		return configQueryService.findSvrgroups(serverId, page, size);
+		return configQueryService.findSvrgroups(serverId, page, size, sort, direction);
 	}
 
 	@GetMapping("/server-configs")
@@ -71,9 +78,11 @@ public class ConfigQueryController {
 	public PageResponse<ServerConfigResponse> findServerConfigs(
 		@PathVariable Long serverId,
 		@RequestParam(defaultValue = "0") int page,
-		@RequestParam(defaultValue = "100") int size
+		@RequestParam(defaultValue = "100") int size,
+		@RequestParam(defaultValue = "id") String sort,
+		@RequestParam(defaultValue = "ASC") Sort.Direction direction
 	) {
-		return configQueryService.findServerConfigs(serverId, page, size);
+		return configQueryService.findServerConfigs(serverId, page, size, sort, direction);
 	}
 
 	@GetMapping("/services")
@@ -85,9 +94,11 @@ public class ConfigQueryController {
 	public PageResponse<ServiceConfigResponse> findServices(
 		@PathVariable Long serverId,
 		@RequestParam(defaultValue = "0") int page,
-		@RequestParam(defaultValue = "100") int size
+		@RequestParam(defaultValue = "100") int size,
+		@RequestParam(defaultValue = "id") String sort,
+		@RequestParam(defaultValue = "ASC") Sort.Direction direction
 	) {
-		return configQueryService.findServices(serverId, page, size);
+		return configQueryService.findServices(serverId, page, size, sort, direction);
 	}
 
 	@GetMapping("/gateways")
@@ -99,8 +110,10 @@ public class ConfigQueryController {
 	public PageResponse<GatewayConfigResponse> findGateways(
 		@PathVariable Long serverId,
 		@RequestParam(defaultValue = "0") int page,
-		@RequestParam(defaultValue = "100") int size
+		@RequestParam(defaultValue = "100") int size,
+		@RequestParam(defaultValue = "id") String sort,
+		@RequestParam(defaultValue = "ASC") Sort.Direction direction
 	) {
-		return configQueryService.findGateways(serverId, page, size);
+		return configQueryService.findGateways(serverId, page, size, sort, direction);
 	}
 }

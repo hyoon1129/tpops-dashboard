@@ -43,9 +43,9 @@ public class ConfigQueryService {
 	}
 
 	@Transactional(readOnly = true)
-	public PageResponse<DomainConfigResponse> findDomains(Long serverId, int page, int size) {
+	public PageResponse<DomainConfigResponse> findDomains(Long serverId, int page, int size, String sort, Sort.Direction direction) {
 		ConfigFile configFile = findCurrentConfigFileEntity(serverId);
-		return PageResponse.from(domainConfigRepository.findByConfigFileId(configFile.getId(), pageRequest(page, size))
+		return PageResponse.from(domainConfigRepository.findByConfigFileId(configFile.getId(), pageRequest(page, size, sort, direction))
 			.map(DomainConfigResponse::from));
 	}
 
@@ -58,9 +58,9 @@ public class ConfigQueryService {
 	}
 
 	@Transactional(readOnly = true)
-	public PageResponse<NodeConfigResponse> findNodes(Long serverId, int page, int size) {
+	public PageResponse<NodeConfigResponse> findNodes(Long serverId, int page, int size, String sort, Sort.Direction direction) {
 		ConfigFile configFile = findCurrentConfigFileEntity(serverId);
-		return PageResponse.from(nodeConfigRepository.findByConfigFileId(configFile.getId(), pageRequest(page, size))
+		return PageResponse.from(nodeConfigRepository.findByConfigFileId(configFile.getId(), pageRequest(page, size, sort, direction))
 			.map(NodeConfigResponse::from));
 	}
 
@@ -73,9 +73,9 @@ public class ConfigQueryService {
 	}
 
 	@Transactional(readOnly = true)
-	public PageResponse<SvrgroupConfigResponse> findSvrgroups(Long serverId, int page, int size) {
+	public PageResponse<SvrgroupConfigResponse> findSvrgroups(Long serverId, int page, int size, String sort, Sort.Direction direction) {
 		ConfigFile configFile = findCurrentConfigFileEntity(serverId);
-		return PageResponse.from(svrgroupConfigRepository.findByConfigFileId(configFile.getId(), pageRequest(page, size))
+		return PageResponse.from(svrgroupConfigRepository.findByConfigFileId(configFile.getId(), pageRequest(page, size, sort, direction))
 			.map(SvrgroupConfigResponse::from));
 	}
 
@@ -88,9 +88,9 @@ public class ConfigQueryService {
 	}
 
 	@Transactional(readOnly = true)
-	public PageResponse<ServerConfigResponse> findServerConfigs(Long serverId, int page, int size) {
+	public PageResponse<ServerConfigResponse> findServerConfigs(Long serverId, int page, int size, String sort, Sort.Direction direction) {
 		ConfigFile configFile = findCurrentConfigFileEntity(serverId);
-		return PageResponse.from(serverConfigRepository.findByConfigFileId(configFile.getId(), pageRequest(page, size))
+		return PageResponse.from(serverConfigRepository.findByConfigFileId(configFile.getId(), pageRequest(page, size, sort, direction))
 			.map(ServerConfigResponse::from));
 	}
 
@@ -103,9 +103,9 @@ public class ConfigQueryService {
 	}
 
 	@Transactional(readOnly = true)
-	public PageResponse<ServiceConfigResponse> findServices(Long serverId, int page, int size) {
+	public PageResponse<ServiceConfigResponse> findServices(Long serverId, int page, int size, String sort, Sort.Direction direction) {
 		ConfigFile configFile = findCurrentConfigFileEntity(serverId);
-		return PageResponse.from(serviceConfigRepository.findByConfigFileId(configFile.getId(), pageRequest(page, size))
+		return PageResponse.from(serviceConfigRepository.findByConfigFileId(configFile.getId(), pageRequest(page, size, sort, direction))
 			.map(ServiceConfigResponse::from));
 	}
 
@@ -118,9 +118,9 @@ public class ConfigQueryService {
 	}
 
 	@Transactional(readOnly = true)
-	public PageResponse<GatewayConfigResponse> findGateways(Long serverId, int page, int size) {
+	public PageResponse<GatewayConfigResponse> findGateways(Long serverId, int page, int size, String sort, Sort.Direction direction) {
 		ConfigFile configFile = findCurrentConfigFileEntity(serverId);
-		return PageResponse.from(gatewayConfigRepository.findByConfigFileId(configFile.getId(), pageRequest(page, size))
+		return PageResponse.from(gatewayConfigRepository.findByConfigFileId(configFile.getId(), pageRequest(page, size, sort, direction))
 			.map(GatewayConfigResponse::from));
 	}
 
@@ -132,9 +132,11 @@ public class ConfigQueryService {
 			));
 	}
 
-	private PageRequest pageRequest(int page, int size) {
+	private PageRequest pageRequest(int page, int size, String sort, Sort.Direction direction) {
 		int normalizedPage = Math.max(page, 0);
 		int normalizedSize = Math.max(1, Math.min(size, 200));
-		return PageRequest.of(normalizedPage, normalizedSize, Sort.by("id").ascending());
+		String normalizedSort = sort == null || sort.isBlank() ? "id" : sort;
+		Sort.Direction normalizedDirection = direction == null ? Sort.Direction.ASC : direction;
+		return PageRequest.of(normalizedPage, normalizedSize, Sort.by(normalizedDirection, normalizedSort));
 	}
 }
