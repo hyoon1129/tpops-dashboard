@@ -108,7 +108,7 @@ export const sectionDefinitions: SectionDefinition[] = [
     title: '도메인',
     endpoint: 'domains',
     columns: columns([
-      'NAME', 'domainId', 'shmkey', 'maxuser', 'minclh', 'maxclh', 'tportno', 'racport',
+      'NAME', 'domainId', 'minclh', 'maxclh', 'tportno', 'racport', 'shmkey', 'maxuser',
       'blocktime', 'maxsvg', 'maxsvr', 'maxspr', 'maxsvc', 'maxsacall', 'maxcacall',
       'maxtotalsvg', 'maxgw', 'maxcpc', 'maxcousin', 'maxcousinsvg', 'gwchkint',
       'gwconnectTimeout', 'nclhchktime', 'nliveinq', 'ipcperm', 'maxnode',
@@ -139,8 +139,8 @@ export const sectionDefinitions: SectionDefinition[] = [
     title: '서버',
     endpoint: 'server-configs',
     columns: columns([
-      'NAME', 'svgname', 'svrtype', 'clopt', 'minValue', 'maxValue', 'target', 'schedule',
-      'maxqcount', 'cpc', 'asqcount', 'restart', 'maxrstart', 'gperiod',
+      'NAME', 'svgname', 'svrtype', 'minValue', 'maxValue', 'target', 'schedule',
+      'maxqcount', 'cpc', 'asqcount', 'restart', 'maxrstart', 'gperiod', 'clopt',
     ], { NAME: 'serverName' }),
     toRows: (items) => items.map((item) => ({ NAME: item.serverName, ...pick(item, sectionDefinitions[3].columns.slice(1).map((column) => column.key)) })),
   },
@@ -158,8 +158,8 @@ export const sectionDefinitions: SectionDefinition[] = [
     title: '게이트웨이',
     endpoint: 'gateways',
     columns: columns([
-      'NAME', 'gwtype', 'nodename', 'portno', 'rgwportno', 'rgwaddr', 'cpc', 'clopt',
-      'loadValue', 'backupRgwaddr', 'backupRgwportno',
+      'NAME', 'gwtype', 'nodename', 'portno', 'rgwportno', 'rgwaddr', 'cpc',
+      'loadValue', 'backupRgwaddr', 'backupRgwportno', 'clopt',
     ], { NAME: 'gatewayName' }),
     toRows: (items) => items.map((item) => ({ NAME: item.gatewayName, ...pick(item, sectionDefinitions[5].columns.slice(1).map((column) => column.key)) })),
   },
