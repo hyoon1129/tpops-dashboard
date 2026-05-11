@@ -59,7 +59,7 @@
 
 .brand strong {
   color: #f7f8f8;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 650;
 }
 
@@ -118,7 +118,7 @@
 .side-nav button span {
   display: block;
   color: inherit;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
 }
 
@@ -144,7 +144,7 @@
 .eyebrow {
   margin: 0 0 8px;
   color: #8a8f98;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.4px;
   text-transform: uppercase;
@@ -172,7 +172,7 @@
   background: #0f1011;
   color: #d0d6e0;
   font: inherit;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .header-tools select {
@@ -202,7 +202,7 @@
   background: transparent;
   color: #f7f8f8;
   font: inherit;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .search-box input::placeholder {
@@ -236,7 +236,7 @@
 .section-card span {
   display: block;
   color: #8a8f98;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .section-card span {
@@ -279,14 +279,14 @@
 .panel-header h2 {
   margin: 0;
   color: #f7f8f8;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 650;
 }
 
 .panel-header p {
   margin: 5px 0 0;
   color: #8a8f98;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .table-panel {
@@ -312,7 +312,7 @@
   color: #d0d6e0;
   padding: 0 12px;
   font: inherit;
-  font-size: 12px;
+  font-size: 13px;
   cursor: pointer;
 }
 
@@ -331,7 +331,7 @@
 
 .table-search span {
   color: #5e6ad2;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
 }
 
@@ -343,7 +343,7 @@
   background: transparent;
   color: #f7f8f8;
   font: inherit;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .table-scroll {
@@ -381,14 +381,14 @@
 .search-section-header h3 {
   margin: 0;
   color: #f7f8f8;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 650;
 }
 
 .search-section-header p {
   margin: 4px 0 0;
   color: #8a8f98;
-  font-size: 11px;
+  font-size: 12px;
 }
 
 .search-section-header button {
@@ -400,7 +400,7 @@
   color: #e3e6ff;
   padding: 0 10px;
   font: inherit;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 650;
   cursor: pointer;
 }
@@ -427,7 +427,7 @@
 .empty-state {
   padding: 28px 18px;
   color: #8a8f98;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 table {
@@ -451,7 +451,7 @@ th {
   z-index: 1;
   color: #8a8f98;
   background: #141516;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
 }
 
@@ -476,7 +476,7 @@ th {
 
 td {
   color: #d0d6e0;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 450;
   font-variant-numeric: tabular-nums;
 }
