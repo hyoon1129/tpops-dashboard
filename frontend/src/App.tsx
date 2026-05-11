@@ -20,6 +20,7 @@ type TableValue = string | number | null | undefined
 type Column = {
   key: string
   label: string
+  sortKey: string
 }
 
 type SectionDefinition = {
@@ -55,6 +56,12 @@ type SearchResult = {
   value: string | null
 }
 
+type SortState = {
+  section: SectionKey
+  key: string
+  direction: 'asc' | 'desc'
+}
+
 const pageSize = 100
 
 const navItems: NavItem[] = [
@@ -72,64 +79,73 @@ const pick = (item: Record<string, TableValue>, keys: string[]) =>
     return row
   }, {})
 
+const columns = (
+  keys: string[],
+  sortKeys: Record<string, string> = {},
+  labels: Record<string, string> = {},
+) =>
+  keys.map((key) => ({ key, label: labels[key] ?? key, sortKey: sortKeys[key] ?? key }))
+
 const sectionDefinitions: SectionDefinition[] = [
   {
     label: 'DOMAIN',
     title: '도메인',
     endpoint: 'domains',
-    columns: [
-      'domainName', 'domainId', 'shmkey', 'maxuser', 'minclh', 'maxclh', 'tportno', 'racport',
+    columns: columns([
+      'NAME', 'domainId', 'shmkey', 'maxuser', 'minclh', 'maxclh', 'tportno', 'racport',
       'blocktime', 'maxsvg', 'maxsvr', 'maxspr', 'maxsvc', 'maxsacall', 'maxcacall',
       'maxtotalsvg', 'maxgw', 'maxcpc', 'maxcousin', 'maxcousinsvg', 'gwchkint',
-      'gwconnectTimeout', 'nclhchktime', 'nliveinq', 'ipcperm', 'maxnode', 'startLine', 'endLine',
-    ].map((key) => ({ key, label: key })),
-    toRows: (items) => items.map((item) => pick(item, sectionDefinitions[0].columns.map((column) => column.key))),
+      'gwconnectTimeout', 'nclhchktime', 'nliveinq', 'ipcperm', 'maxnode',
+    ], { NAME: 'domainName' }),
+    toRows: (items) => items.map((item) => ({ NAME: item.domainName, ...pick(item, sectionDefinitions[0].columns.slice(1).map((column) => column.key)) })),
   },
   {
     label: 'NODE',
     title: '노드',
     endpoint: 'nodes',
-    columns: [
-      'nodeName', 'hostname', 'tmaxdir', 'appdir', 'tmaxhome', 'pathdir', 'tlogdir', 'ulogdir',
-      'slogdir', 'nodetype', 'autobackup', 'maxgwcpc', 'maxgwsvr', 'clhopt', 'startLine', 'endLine',
-    ].map((key) => ({ key, label: key })),
-    toRows: (items) => items.map((item) => pick(item, sectionDefinitions[1].columns.map((column) => column.key))),
+    columns: columns([
+      'NAME', 'hostname', 'tmaxdir', 'appdir', 'tmaxhome', 'pathdir', 'tlogdir', 'ulogdir',
+      'slogdir', 'nodetype', 'autobackup', 'maxgwcpc', 'maxgwsvr', 'clhopt',
+    ], { NAME: 'nodeName' }),
+    toRows: (items) => items.map((item) => ({ NAME: item.nodeName, ...pick(item, sectionDefinitions[1].columns.slice(1).map((column) => column.key)) })),
   },
   {
     label: 'SVRGROUP',
     title: '서버 그룹',
     endpoint: 'svrgroups',
-    columns: ['svrgroupName', 'nodename', 'cousin', 'loadValue', 'backup', 'envfile', 'startLine', 'endLine']
-      .map((key) => ({ key, label: key })),
-    toRows: (items) => items.map((item) => pick(item, sectionDefinitions[2].columns.map((column) => column.key))),
+    columns: columns([
+      'NAME', 'nodename', 'cousin', 'loadValue', 'backup', 'envfile',
+    ], { NAME: 'svrgroupName' }),
+    toRows: (items) => items.map((item) => ({ NAME: item.svrgroupName, ...pick(item, sectionDefinitions[2].columns.slice(1).map((column) => column.key)) })),
   },
   {
     label: 'SERVER',
     title: '서버',
     endpoint: 'server-configs',
-    columns: [
-      'serverName', 'svgname', 'svrtype', 'clopt', 'minValue', 'maxValue', 'target', 'schedule',
-      'maxqcount', 'cpc', 'asqcount', 'restart', 'maxrstart', 'gperiod', 'startLine', 'endLine',
-    ].map((key) => ({ key, label: key })),
-    toRows: (items) => items.map((item) => pick(item, sectionDefinitions[3].columns.map((column) => column.key))),
+    columns: columns([
+      'NAME', 'svgname', 'svrtype', 'clopt', 'minValue', 'maxValue', 'target', 'schedule',
+      'maxqcount', 'cpc', 'asqcount', 'restart', 'maxrstart', 'gperiod',
+    ], { NAME: 'serverName' }),
+    toRows: (items) => items.map((item) => ({ NAME: item.serverName, ...pick(item, sectionDefinitions[3].columns.slice(1).map((column) => column.key)) })),
   },
   {
     label: 'SERVICE',
     title: '서비스',
     endpoint: 'services',
-    columns: ['serviceName', 'svrname', 'svctime', 'businessCode', 'businessName', 'startLine', 'endLine']
-      .map((key) => ({ key, label: key })),
-    toRows: (items) => items.map((item) => pick(item, sectionDefinitions[4].columns.map((column) => column.key))),
+    columns: columns([
+      'NAME', 'businessName', 'svrname', 'svctime',
+    ], { NAME: 'serviceName', businessName: 'businessCode.businessName' }, { businessName: '업무' }),
+    toRows: (items) => items.map((item) => ({ NAME: item.serviceName, ...pick(item, sectionDefinitions[4].columns.slice(1).map((column) => column.key)) })),
   },
   {
     label: 'GATEWAY',
     title: '게이트웨이',
     endpoint: 'gateways',
-    columns: [
-      'gatewayName', 'gwtype', 'nodename', 'portno', 'rgwportno', 'rgwaddr', 'cpc', 'clopt',
-      'loadValue', 'backupRgwaddr', 'backupRgwportno', 'startLine', 'endLine',
-    ].map((key) => ({ key, label: key })),
-    toRows: (items) => items.map((item) => pick(item, sectionDefinitions[5].columns.map((column) => column.key))),
+    columns: columns([
+      'NAME', 'gwtype', 'nodename', 'portno', 'rgwportno', 'rgwaddr', 'cpc', 'clopt',
+      'loadValue', 'backupRgwaddr', 'backupRgwportno',
+    ], { NAME: 'gatewayName' }),
+    toRows: (items) => items.map((item) => ({ NAME: item.gatewayName, ...pick(item, sectionDefinitions[5].columns.slice(1).map((column) => column.key)) })),
   },
 ]
 
@@ -150,6 +166,8 @@ function App() {
   const [error, setError] = useState<string | null>(null)
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
   const [searchLoading, setSearchLoading] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [sortState, setSortState] = useState<SortState | null>(null)
 
   const currentDefinition = sectionDefinitions.find((section) => section.label === selectedSection) ?? sectionDefinitions[0]
   const currentState = sections[selectedSection]
@@ -190,7 +208,12 @@ function App() {
     }
   }, [])
 
-  const loadSectionPage = useCallback(async (sectionKey: SectionKey, page: number, append: boolean) => {
+  const loadSectionPage = useCallback(async (
+    sectionKey: SectionKey,
+    page: number,
+    append: boolean,
+    nextSortState: SortState | null = null,
+  ) => {
     if (selectedServerId === null) {
       return
     }
@@ -206,7 +229,15 @@ function App() {
     }))
 
     try {
-      const response = await fetch(`/api/servers/${selectedServerId}/${definition.endpoint}/page?page=${page}&size=${pageSize}`)
+      const params = new URLSearchParams({
+        page: String(page),
+        size: String(pageSize),
+      })
+      if (nextSortState?.section === sectionKey) {
+        params.set('sort', nextSortState.key)
+        params.set('direction', nextSortState.direction.toUpperCase())
+      }
+      const response = await fetch(`/api/servers/${selectedServerId}/${definition.endpoint}/page?${params.toString()}`)
       if (!response.ok) {
         throw new Error(`${definition.title} 설정을 불러오지 못했습니다.`)
       }
@@ -293,7 +324,25 @@ function App() {
     if (isGlobalSearch || sectionKeyword.trim() || currentState.loading || currentState.last) {
       return
     }
-    loadSectionPage(selectedSection, currentState.page + 1, true)
+    loadSectionPage(selectedSection, currentState.page + 1, true, sortState)
+  }
+
+  const handleSort = (column: Column) => {
+    const nextDirection = sortState?.section === selectedSection && sortState.key === column.sortKey && sortState.direction === 'asc'
+      ? 'desc'
+      : 'asc'
+    const nextSortState: SortState = {
+      section: selectedSection,
+      key: column.sortKey,
+      direction: nextDirection,
+    }
+    setSortState(nextSortState)
+    setSectionKeyword('')
+    setSections((current) => ({
+      ...current,
+      [selectedSection]: { ...current[selectedSection], rows: [], page: -1, last: false },
+    }))
+    loadSectionPage(selectedSection, 0, false, nextSortState)
   }
 
   const handleServerChange = (serverId: number) => {
@@ -303,6 +352,7 @@ function App() {
     setGlobalKeyword('')
     setSearchResults([])
     setSearchLoading(false)
+    setSortState(null)
   }
 
   const handleGlobalKeywordChange = (keyword: string) => {
@@ -314,7 +364,7 @@ function App() {
   }
 
   return (
-    <main className="app-shell">
+    <main className={sidebarCollapsed ? 'app-shell sidebar-collapsed' : 'app-shell'}>
       <aside className="sidebar" aria-label="대시보드 메뉴">
         <div className="brand">
           <span className="brand-mark">T</span>
@@ -322,6 +372,15 @@ function App() {
             <strong>TPOps</strong>
           </div>
         </div>
+
+        <button
+          type="button"
+          className="sidebar-toggle"
+          aria-label={sidebarCollapsed ? '대시보드 탭 열기' : '대시보드 탭 닫기'}
+          onClick={() => setSidebarCollapsed((collapsed) => !collapsed)}
+        >
+          {sidebarCollapsed ? '›' : '‹'}
+        </button>
 
         <nav className="side-nav">
           {navItems.map((item) => (
@@ -449,7 +508,20 @@ function App() {
                 <thead>
                   <tr>
                     {currentDefinition.columns.map((column) => (
-                      <th key={column.key}>{column.label}</th>
+                      <th key={column.key}>
+                        <button
+                          type="button"
+                          className="sort-button"
+                          onClick={() => handleSort(column)}
+                        >
+                          <span>{column.label}</span>
+                          <span aria-hidden="true" className="sort-mark">
+                            {sortState?.section === selectedSection && sortState.key === column.sortKey
+                              ? sortState.direction === 'asc' ? '↑' : '↓'
+                              : '↕'}
+                          </span>
+                        </button>
+                      </th>
                     ))}
                   </tr>
                 </thead>
