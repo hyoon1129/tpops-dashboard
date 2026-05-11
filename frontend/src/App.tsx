@@ -1,550 +1,55 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
 import './App.css'
-
-type NavItem = {
-  label: string
-  active?: boolean
-}
-
-type ServerInfo = {
-  serverId: number
-  serverName: string
-  serverIp: string
-  environment: string
-  description: string | null
-}
-
-type SectionKey = 'DOMAIN' | 'NODE' | 'SVRGROUP' | 'SERVER' | 'SERVICE' | 'GATEWAY'
-type TableValue = string | number | null | undefined
-
-type Column = {
-  key: string
-  label: string
-  sortKey: string
-}
-
-type SectionDefinition = {
-  label: SectionKey
-  title: string
-  endpoint: string
-  columns: Column[]
-  toRows: (items: Array<Record<string, TableValue>>) => TableRow[]
-}
-
-type TableRow = Record<string, TableValue>
-
-type PageResponse = {
-  content: Array<Record<string, TableValue>>
-  page: number
-  totalElements: number
-  last: boolean
-}
-
-type SectionState = {
-  rows: TableRow[]
-  total: number
-  page: number
-  last: boolean
-  loading: boolean
-}
-
-type SearchResult = {
-  section: SectionKey
-  name: string
-  related: string | null
-  matchedField: string
-  value: string | null
-}
-
-type SortState = {
-  section: SectionKey
-  key: string
-  direction: 'asc' | 'desc'
-}
-
-const pageSize = 100
-const collapsedSearchLimit = 12
-
-const navItems: NavItem[] = [
-  { label: '개요', active: true },
-  { label: '설정 조회' },
-  { label: '구성 관계' },
-  { label: '업무 매핑' },
-  { label: '통합 검색' },
-  { label: '관리 설정' },
-]
-
-const pick = (item: Record<string, TableValue>, keys: string[]) =>
-  keys.reduce<TableRow>((row, key) => {
-    row[key] = item[key]
-    return row
-  }, {})
-
-const columns = (
-  keys: string[],
-  sortKeys: Record<string, string> = {},
-  labels: Record<string, string> = {},
-) =>
-  keys.map((key) => ({ key, label: labels[key] ?? key, sortKey: sortKeys[key] ?? key }))
-
-const escapeRegExp = (value: string) =>
-  value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-
-const highlightedText = (value: TableValue, keyword: string) => {
-  const text = String(value ?? '-')
-  const normalizedKeyword = keyword.trim()
-
-  if (!normalizedKeyword) {
-    return text
-  }
-
-  const pattern = new RegExp(`(${escapeRegExp(normalizedKeyword)})`, 'gi')
-  return text.split(pattern).map((part, index) =>
-    part.toLowerCase() === normalizedKeyword.toLowerCase()
-      ? <mark key={`${part}-${index}`}>{part}</mark>
-      : part,
-  )
-}
-
-const sectionDefinitions: SectionDefinition[] = [
-  {
-    label: 'DOMAIN',
-    title: '도메인',
-    endpoint: 'domains',
-    columns: columns([
-      'NAME', 'domainId', 'shmkey', 'maxuser', 'minclh', 'maxclh', 'tportno', 'racport',
-      'blocktime', 'maxsvg', 'maxsvr', 'maxspr', 'maxsvc', 'maxsacall', 'maxcacall',
-      'maxtotalsvg', 'maxgw', 'maxcpc', 'maxcousin', 'maxcousinsvg', 'gwchkint',
-      'gwconnectTimeout', 'nclhchktime', 'nliveinq', 'ipcperm', 'maxnode',
-    ], { NAME: 'domainName' }),
-    toRows: (items) => items.map((item) => ({ NAME: item.domainName, ...pick(item, sectionDefinitions[0].columns.slice(1).map((column) => column.key)) })),
-  },
-  {
-    label: 'NODE',
-    title: '노드',
-    endpoint: 'nodes',
-    columns: columns([
-      'NAME', 'hostname', 'tmaxdir', 'appdir', 'tmaxhome', 'pathdir', 'tlogdir', 'ulogdir',
-      'slogdir', 'nodetype', 'autobackup', 'maxgwcpc', 'maxgwsvr', 'clhopt',
-    ], { NAME: 'nodeName' }),
-    toRows: (items) => items.map((item) => ({ NAME: item.nodeName, ...pick(item, sectionDefinitions[1].columns.slice(1).map((column) => column.key)) })),
-  },
-  {
-    label: 'SVRGROUP',
-    title: '서버 그룹',
-    endpoint: 'svrgroups',
-    columns: columns([
-      'NAME', 'nodename', 'cousin', 'loadValue', 'backup', 'envfile',
-    ], { NAME: 'svrgroupName' }),
-    toRows: (items) => items.map((item) => ({ NAME: item.svrgroupName, ...pick(item, sectionDefinitions[2].columns.slice(1).map((column) => column.key)) })),
-  },
-  {
-    label: 'SERVER',
-    title: '서버',
-    endpoint: 'server-configs',
-    columns: columns([
-      'NAME', 'svgname', 'svrtype', 'clopt', 'minValue', 'maxValue', 'target', 'schedule',
-      'maxqcount', 'cpc', 'asqcount', 'restart', 'maxrstart', 'gperiod',
-    ], { NAME: 'serverName' }),
-    toRows: (items) => items.map((item) => ({ NAME: item.serverName, ...pick(item, sectionDefinitions[3].columns.slice(1).map((column) => column.key)) })),
-  },
-  {
-    label: 'SERVICE',
-    title: '서비스',
-    endpoint: 'services',
-    columns: columns([
-      'NAME', 'businessName', 'svrname', 'svctime',
-    ], { NAME: 'serviceName', businessName: 'businessCode.businessName' }, { businessName: '업무' }),
-    toRows: (items) => items.map((item) => ({ NAME: item.serviceName, ...pick(item, sectionDefinitions[4].columns.slice(1).map((column) => column.key)) })),
-  },
-  {
-    label: 'GATEWAY',
-    title: '게이트웨이',
-    endpoint: 'gateways',
-    columns: columns([
-      'NAME', 'gwtype', 'nodename', 'portno', 'rgwportno', 'rgwaddr', 'cpc', 'clopt',
-      'loadValue', 'backupRgwaddr', 'backupRgwportno',
-    ], { NAME: 'gatewayName' }),
-    toRows: (items) => items.map((item) => ({ NAME: item.gatewayName, ...pick(item, sectionDefinitions[5].columns.slice(1).map((column) => column.key)) })),
-  },
-]
-
-const initialSections = () =>
-  sectionDefinitions.reduce<Record<SectionKey, SectionState>>((states, section) => {
-    states[section.label] = { rows: [], total: 0, page: -1, last: false, loading: false }
-    return states
-  }, {} as Record<SectionKey, SectionState>)
-
-const initialSearchRows = () =>
-  sectionDefinitions.reduce<Record<SectionKey, TableRow[]>>((rows, section) => {
-    rows[section.label] = []
-    return rows
-  }, {} as Record<SectionKey, TableRow[]>)
+import { ConfigTable } from './components/ConfigTable'
+import { SearchResults } from './components/SearchResults'
+import { SectionCards } from './components/SectionCards'
+import { Sidebar } from './components/Sidebar'
+import { WorkspaceHeader } from './components/WorkspaceHeader'
+import { useConfigDashboard } from './hooks/useConfigDashboard'
 
 function App() {
-  const [servers, setServers] = useState<ServerInfo[]>([])
-  const [selectedServerId, setSelectedServerId] = useState<number | null>(null)
-  const [selectedSection, setSelectedSection] = useState<SectionKey>('SERVER')
-  const [globalKeyword, setGlobalKeyword] = useState('')
-  const [sectionKeyword, setSectionKeyword] = useState('')
-  const [sections, setSections] = useState<Record<SectionKey, SectionState>>(initialSections)
-  const [loadingServers, setLoadingServers] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([])
-  const [searchRowsBySection, setSearchRowsBySection] = useState<Record<SectionKey, TableRow[]>>(initialSearchRows)
-  const [searchLoading, setSearchLoading] = useState(false)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
-  const [sortState, setSortState] = useState<SortState | null>(null)
-  const [expandedSearchSections, setExpandedSearchSections] = useState<Set<SectionKey>>(() => new Set())
-
-  const currentDefinition = sectionDefinitions.find((section) => section.label === selectedSection) ?? sectionDefinitions[0]
-  const currentState = sections[selectedSection]
-  const selectedServer = servers.find((server) => server.serverId === selectedServerId) ?? null
-  const isGlobalSearch = globalKeyword.trim().length > 0
-  const globalSearchRowTotal = Object.values(searchRowsBySection).reduce((total, rows) => total + rows.length, 0)
-  const searchResultsBySection = useMemo(() =>
-    sectionDefinitions.map((section) => ({
-      section,
-      rows: searchRowsBySection[section.label],
-    })).filter((group) => group.rows.length > 0),
-  [searchRowsBySection])
-
-  useEffect(() => {
-    let ignore = false
-
-    async function loadServers() {
-      try {
-        setLoadingServers(true)
-        const response = await fetch('/api/servers')
-        if (!response.ok) {
-          throw new Error('서버 목록을 불러오지 못했습니다.')
-        }
-        const data = (await response.json()) as ServerInfo[]
-        if (!ignore) {
-          setServers(data)
-          setSelectedServerId((serverId) => serverId ?? data[0]?.serverId ?? null)
-          setError(data.length === 0 ? '조회할 서버가 없습니다.' : null)
-        }
-      } catch (caught) {
-        if (!ignore) {
-          setError(caught instanceof Error ? caught.message : '알 수 없는 오류가 발생했습니다.')
-        }
-      } finally {
-        if (!ignore) {
-          setLoadingServers(false)
-        }
-      }
-    }
-
-    loadServers()
-
-    return () => {
-      ignore = true
-    }
-  }, [])
-
-  const loadSectionPage = useCallback(async (
-    sectionKey: SectionKey,
-    page: number,
-    append: boolean,
-    nextSortState: SortState | null = null,
-  ) => {
-    if (selectedServerId === null) {
-      return
-    }
-
-    const definition = sectionDefinitions.find((section) => section.label === sectionKey)
-    if (!definition) {
-      return
-    }
-
-    setSections((current) => ({
-      ...current,
-      [sectionKey]: { ...current[sectionKey], loading: true },
-    }))
-
-    try {
-      const params = new URLSearchParams({
-        page: String(page),
-        size: String(pageSize),
-      })
-      if (nextSortState?.section === sectionKey) {
-        params.set('sort', nextSortState.key)
-        params.set('direction', nextSortState.direction.toUpperCase())
-      }
-      const response = await fetch(`/api/servers/${selectedServerId}/${definition.endpoint}/page?${params.toString()}`)
-      if (!response.ok) {
-        throw new Error(`${definition.title} 설정을 불러오지 못했습니다.`)
-      }
-      const data = (await response.json()) as PageResponse
-      const rows = definition.toRows(data.content)
-
-      setSections((current) => ({
-        ...current,
-        [sectionKey]: {
-          rows: append ? [...current[sectionKey].rows, ...rows] : rows,
-          total: data.totalElements,
-          page: data.page,
-          last: data.last,
-          loading: false,
-        },
-      }))
-      setError(null)
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : '알 수 없는 오류가 발생했습니다.')
-      setSections((current) => ({
-        ...current,
-        [sectionKey]: { ...current[sectionKey], loading: false },
-      }))
-    }
-  }, [selectedServerId])
-
-  useEffect(() => {
-    if (selectedServerId === null) {
-      return
-    }
-
-    sectionDefinitions.forEach((section) => {
-      loadSectionPage(section.label, 0, false)
-    })
-  }, [loadSectionPage, selectedServerId])
-
-  useEffect(() => {
-    if (selectedServerId === null || !globalKeyword.trim()) {
-      return
-    }
-
-    const controller = new AbortController()
-    const timer = window.setTimeout(async () => {
-      try {
-        setSearchLoading(true)
-        const params = new URLSearchParams({ keyword: globalKeyword.trim() })
-        const response = await fetch(`/api/servers/${selectedServerId}/search?${params.toString()}`, {
-          signal: controller.signal,
-        })
-        if (!response.ok) {
-          throw new Error('검색 결과를 불러오지 못했습니다.')
-        }
-        const results = (await response.json()) as SearchResult[]
-        const nextSearchRows = initialSearchRows()
-
-        await Promise.all(sectionDefinitions.map(async (section) => {
-          const matchedNames = new Set(
-            results
-              .filter((result) => result.section === section.label)
-              .map((result) => result.name),
-          )
-          if (matchedNames.size === 0) {
-            return
-          }
-
-          const rows: TableRow[] = []
-          let page = 0
-          let last = false
-
-          while (!last) {
-            const sectionParams = new URLSearchParams({
-              page: String(page),
-              size: '200',
-              sort: section.columns[0].sortKey,
-              direction: 'ASC',
-            })
-            const sectionResponse = await fetch(`/api/servers/${selectedServerId}/${section.endpoint}/page?${sectionParams.toString()}`, {
-              signal: controller.signal,
-            })
-            if (!sectionResponse.ok) {
-              throw new Error(`${section.title} 검색 결과를 불러오지 못했습니다.`)
-            }
-            const data = (await sectionResponse.json()) as PageResponse
-            rows.push(...section.toRows(data.content).filter((row) => matchedNames.has(String(row.NAME ?? ''))))
-            last = data.last
-            page += 1
-          }
-
-          nextSearchRows[section.label] = rows
-        }))
-
-        setSearchResults(results)
-        setSearchRowsBySection(nextSearchRows)
-        setExpandedSearchSections(new Set())
-      } catch (caught) {
-        if (!controller.signal.aborted) {
-          setError(caught instanceof Error ? caught.message : '알 수 없는 오류가 발생했습니다.')
-        }
-      } finally {
-        if (!controller.signal.aborted) {
-          setSearchLoading(false)
-        }
-      }
-    }, 300)
-
-    return () => {
-      controller.abort()
-      window.clearTimeout(timer)
-    }
-  }, [globalKeyword, selectedServerId])
-
-  const filteredRows = useMemo(() => {
-    const normalizedKeyword = sectionKeyword.trim().toLowerCase()
-    if (!normalizedKeyword) {
-      return currentState.rows
-    }
-    return currentState.rows.filter((row) =>
-      currentDefinition.columns.some((column) =>
-        String(row[column.key] ?? '').toLowerCase().includes(normalizedKeyword),
-      ),
-    )
-  }, [currentDefinition.columns, currentState.rows, sectionKeyword])
-
-  const loadNextPage = () => {
-    if (isGlobalSearch || sectionKeyword.trim() || currentState.loading || currentState.last) {
-      return
-    }
-    loadSectionPage(selectedSection, currentState.page + 1, true, sortState)
-  }
-
-  const handleSort = (column: Column) => {
-    const nextDirection = sortState?.section === selectedSection && sortState.key === column.sortKey && sortState.direction === 'asc'
-      ? 'desc'
-      : 'asc'
-    const nextSortState: SortState = {
-      section: selectedSection,
-      key: column.sortKey,
-      direction: nextDirection,
-    }
-    setSortState(nextSortState)
-    setSectionKeyword('')
-    setSections((current) => ({
-      ...current,
-      [selectedSection]: { ...current[selectedSection], rows: [], page: -1, last: false },
-    }))
-    loadSectionPage(selectedSection, 0, false, nextSortState)
-  }
-
-  const handleServerChange = (serverId: number) => {
-    setSelectedServerId(serverId)
-    setSections(initialSections())
-    setSectionKeyword('')
-    setGlobalKeyword('')
-    setSearchResults([])
-    setSearchRowsBySection(initialSearchRows())
-    setSearchLoading(false)
-    setSortState(null)
-  }
-
-  const handleGlobalKeywordChange = (keyword: string) => {
-    setGlobalKeyword(keyword)
-    if (!keyword.trim()) {
-      setSearchResults([])
-      setSearchRowsBySection(initialSearchRows())
-      setSearchLoading(false)
-      setExpandedSearchSections(new Set())
-    }
-  }
-
-  const toggleSearchSection = (section: SectionKey) => {
-    setExpandedSearchSections((current) => {
-      const next = new Set(current)
-      if (next.has(section)) {
-        next.delete(section)
-      } else {
-        next.add(section)
-      }
-      return next
-    })
-  }
+  const dashboard = useConfigDashboard()
 
   return (
-    <main className={sidebarCollapsed ? 'app-shell sidebar-collapsed' : 'app-shell'}>
-      <aside className="sidebar" aria-label="대시보드 메뉴">
-        <div className="brand">
-          <span className="brand-mark">T</span>
-          <div>
-            <strong>TPOps</strong>
-          </div>
-        </div>
-
-        <button
-          type="button"
-          className="sidebar-toggle"
-          aria-label={sidebarCollapsed ? '대시보드 탭 열기' : '대시보드 탭 닫기'}
-          onClick={() => setSidebarCollapsed((collapsed) => !collapsed)}
-        >
-          {sidebarCollapsed ? '›' : '‹'}
-        </button>
-
-        <nav className="side-nav">
-          {navItems.map((item) => (
-            <button key={item.label} type="button" className={item.active ? 'active' : ''}>
-              <span>{item.label}</span>
-            </button>
-          ))}
-        </nav>
-      </aside>
+    <main className={dashboard.sidebarCollapsed ? 'app-shell sidebar-collapsed' : 'app-shell'}>
+      <Sidebar
+        collapsed={dashboard.sidebarCollapsed}
+        onCollapsedChange={dashboard.setSidebarCollapsed}
+      />
 
       <section className="workspace">
-        <header className="workspace-header">
-          <div>
-            <p className="eyebrow">{selectedServer?.environment ?? 'TPOPS'}</p>
-            <h1>{selectedServer?.serverName ?? '운영 설정 대시보드'}</h1>
-          </div>
+        <WorkspaceHeader
+          globalKeyword={dashboard.globalKeyword}
+          onGlobalKeywordChange={dashboard.handleGlobalKeywordChange}
+          onServerChange={dashboard.handleServerChange}
+          selectedServer={dashboard.selectedServer}
+          selectedServerId={dashboard.selectedServerId}
+          servers={dashboard.servers}
+        />
 
-          <div className="header-tools" aria-label="조회 조건">
-            <select
-              value={selectedServerId ?? ''}
-              onChange={(event) => handleServerChange(Number(event.target.value))}
-            >
-              {servers.map((server) => (
-                <option key={server.serverId} value={server.serverId}>
-                  {server.serverName}
-                </option>
-              ))}
-            </select>
-            <div className="search-box">
-              <span aria-hidden="true">/</span>
-              <input
-                value={globalKeyword}
-                onChange={(event) => handleGlobalKeywordChange(event.target.value)}
-                placeholder="전체 설정에서 검색"
-              />
-            </div>
-          </div>
-        </header>
-
-        <section className="section-card-grid" aria-label="설정 섹션 요약">
-          {sectionDefinitions.map((section) => (
-            <button
-              key={section.label}
-              type="button"
-              className={section.label === selectedSection && !isGlobalSearch ? 'section-card active' : 'section-card'}
-              onClick={() => {
-                setSelectedSection(section.label)
-                setGlobalKeyword('')
-              }}
-            >
-              <span>{section.label}</span>
-              <strong>{sections[section.label].total}</strong>
-            </button>
-          ))}
-        </section>
+        <SectionCards
+          isGlobalSearch={dashboard.isGlobalSearch}
+          onSectionSelect={dashboard.selectSection}
+          sections={dashboard.sections}
+          selectedSection={dashboard.selectedSection}
+        />
 
         <section className="panel table-panel">
           <div className="panel-header table-heading">
             <div>
-              <h2>{isGlobalSearch ? '전체 검색 결과' : `${currentDefinition.title} 설정`}</h2>
+              <h2>{dashboard.isGlobalSearch ? '전체 검색 결과' : `${dashboard.currentDefinition.title} 설정`}</h2>
               <p>
-                {isGlobalSearch
-                  ? `전체 섹션 · 검색 결과 ${globalSearchRowTotal}건`
-                  : `${currentDefinition.label} 섹션 · 총 ${currentState.total}건 · 표시 ${filteredRows.length}건`}
+                {dashboard.isGlobalSearch
+                  ? `전체 섹션 · 검색 결과 ${dashboard.globalSearchRowTotal}건`
+                  : `${dashboard.currentDefinition.label} 섹션 · 총 ${dashboard.currentState.total}건 · 표시 ${dashboard.filteredRows.length}건`}
               </p>
             </div>
-            {!isGlobalSearch ? (
+            {!dashboard.isGlobalSearch ? (
               <div className="table-actions">
                 <div className="table-search">
                   <span aria-hidden="true">/</span>
                   <input
-                    value={sectionKeyword}
-                    onChange={(event) => setSectionKeyword(event.target.value)}
+                    value={dashboard.sectionKeyword}
+                    onChange={(event) => dashboard.setSectionKeyword(event.target.value)}
                     placeholder="현재 섹션 검색"
                   />
                 </div>
@@ -554,111 +59,31 @@ function App() {
             ) : null}
           </div>
 
-          {error ? <div className="empty-state">{error}</div> : null}
-          {loadingServers || searchLoading ? <div className="empty-state">데이터를 불러오는 중입니다.</div> : null}
+          {dashboard.error ? <div className="empty-state">{dashboard.error}</div> : null}
+          {dashboard.loadingServers || dashboard.searchLoading ? <div className="empty-state">데이터를 불러오는 중입니다.</div> : null}
 
-          {!error && !loadingServers && isGlobalSearch ? (
-            <div className="search-results">
-              {searchResultsBySection.map(({ section, rows }) => {
-                const expanded = expandedSearchSections.has(section.label)
-                const visibleRows = expanded ? rows : rows.slice(0, collapsedSearchLimit)
-                const hiddenCount = rows.length - visibleRows.length
-
-                return (
-                <section className="search-section" key={section.label}>
-                  <div className="search-section-header">
-                    <div>
-                      <h3>{section.title}</h3>
-                      <p>{section.label} 섹션 · {rows.length}건</p>
-                    </div>
-                    {rows.length > collapsedSearchLimit ? (
-                      <button type="button" onClick={() => toggleSearchSection(section.label)}>
-                        {expanded ? '접기' : `${hiddenCount}건 더 보기`}
-                      </button>
-                    ) : null}
-                  </div>
-                  <div className="search-table-scroll">
-                    <table>
-                      <thead>
-                        <tr>
-                          {section.columns.map((column) => (
-                            <th key={column.key}>{column.label}</th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {visibleRows.map((row, rowIndex) => (
-                          <tr key={`${String(row[section.columns[0].key])}-${rowIndex}`}>
-                            {section.columns.map((column, columnIndex) => (
-                              <td key={column.key}>
-                                {columnIndex === 0
-                                  ? <strong>{highlightedText(row[column.key], globalKeyword)}</strong>
-                                  : highlightedText(row[column.key], globalKeyword)}
-                              </td>
-                            ))}
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </section>
-                )
-              })}
-              {!searchLoading && searchResults.length === 0 ? <div className="empty-state">검색 결과가 없습니다.</div> : null}
-            </div>
+          {!dashboard.error && !dashboard.loadingServers && dashboard.isGlobalSearch ? (
+            <SearchResults
+              expandedSections={dashboard.expandedSearchSections}
+              groups={dashboard.searchResultsBySection}
+              keyword={dashboard.globalKeyword}
+              resultCount={dashboard.globalSearchRowTotal}
+              searchLoading={dashboard.searchLoading}
+              onToggleSection={dashboard.toggleSearchSection}
+            />
           ) : null}
 
-          {!error && !loadingServers && !isGlobalSearch ? (
-            <div
-              className="table-scroll"
-              onScroll={(event) => {
-                const target = event.currentTarget
-                if (target.scrollTop + target.clientHeight >= target.scrollHeight - 80) {
-                  loadNextPage()
-                }
-              }}
-            >
-              <table>
-                <thead>
-                  <tr>
-                    {currentDefinition.columns.map((column) => (
-                      <th key={column.key}>
-                        <button
-                          type="button"
-                          className="sort-button"
-                          onClick={() => handleSort(column)}
-                        >
-                          <span>{column.label}</span>
-                          <span aria-hidden="true" className="sort-mark">
-                            {sortState?.section === selectedSection && sortState.key === column.sortKey
-                              ? sortState.direction === 'asc' ? '↑' : '↓'
-                              : '↕'}
-                          </span>
-                        </button>
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredRows.map((row, rowIndex) => (
-                    <tr key={`${String(row[currentDefinition.columns[0].key])}-${rowIndex}`}>
-                      {currentDefinition.columns.map((column, columnIndex) => (
-                        <td key={column.key}>
-                          {columnIndex === 0
-                            ? <strong>{highlightedText(row[column.key], sectionKeyword)}</strong>
-                            : highlightedText(row[column.key], sectionKeyword)}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {currentState.loading ? <div className="empty-state">다음 데이터를 불러오는 중입니다.</div> : null}
-              {!currentState.loading && filteredRows.length === 0 ? <div className="empty-state">표시할 데이터가 없습니다.</div> : null}
-              {!currentState.loading && currentState.last && currentState.rows.length > 0 ? (
-                <div className="empty-state">마지막 데이터입니다.</div>
-              ) : null}
-            </div>
+          {!dashboard.error && !dashboard.loadingServers && !dashboard.isGlobalSearch ? (
+            <ConfigTable
+              currentDefinition={dashboard.currentDefinition}
+              currentState={dashboard.currentState}
+              filteredRows={dashboard.filteredRows}
+              onLoadNextPage={dashboard.loadNextPage}
+              onSort={dashboard.handleSort}
+              sectionKeyword={dashboard.sectionKeyword}
+              selectedSection={dashboard.selectedSection}
+              sortState={dashboard.sortState}
+            />
           ) : null}
         </section>
       </section>
