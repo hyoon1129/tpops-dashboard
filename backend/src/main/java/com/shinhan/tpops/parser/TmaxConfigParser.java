@@ -16,9 +16,9 @@ public class TmaxConfigParser {
 
 		for (int index = 0; index < lines.length; index++) {
 			int lineNumber = index + 1;
-			String line = lines[index];
+			String line = stripComment(lines[index]);
 			String trimmed = line.trim();
-			if (trimmed.isBlank()) {
+			if (trimmed.isBlank() || trimmed.startsWith("#")) {
 				continue;
 			}
 
@@ -44,7 +44,7 @@ public class TmaxConfigParser {
 			}
 
 			if (currentEntry != null) {
-				putAssignment(currentEntry.values, trimmed);
+				putAssignments(currentEntry.values, trimmed);
 				currentEntry.endLine = lineNumber;
 			}
 		}
@@ -54,6 +54,20 @@ public class TmaxConfigParser {
 		}
 
 		return parsedConfig;
+	}
+
+	private String stripComment(String line) {
+		boolean quoted = false;
+		for (int index = 0; index < line.length(); index++) {
+			char character = line.charAt(index);
+			if (character == '"') {
+				quoted = !quoted;
+			}
+			if (!quoted && character == '#') {
+				return line.substring(0, index);
+			}
+		}
+		return line;
 	}
 
 	private ConfigSection parseSection(String line) {
@@ -67,14 +81,32 @@ public class TmaxConfigParser {
 
 	private MutableEntry newEntry(ConfigSection section, String line, int lineNumber) {
 		String[] parts = line.split("\\s+", 2);
-		MutableEntry entry = new MutableEntry(section, parts[0], lineNumber);
+		MutableEntry entry = new MutableEntry(section, normalizeEntryName(parts[0]), lineNumber);
 		if (parts.length > 1) {
-			putAssignment(entry.values, parts[1].trim());
+			putAssignments(entry.values, parts[1].trim());
 		}
 		return entry;
 	}
 
-	private void putAssignment(Map<String, String> values, String line) {
+	private String normalizeEntryName(String name) {
+		if (name.endsWith(":")) {
+			return name.substring(0, name.length() - 1);
+		}
+		return name;
+	}
+
+	private void putAssignments(Map<String, String> values, String line) {
+		for (String assignment : splitAssignments(line)) {
+			putAssignment(values, assignment);
+		}
+	}
+
+	private String[] splitAssignments(String line) {
+		return line.split(",(?=(?:[^\"]*\"[^\"]*\")*[^\"]*$)");
+	}
+
+	private void putAssignment(Map<String, String> values, String assignment) {
+		String line = assignment.trim();
 		int equalsIndex = line.indexOf('=');
 		if (equalsIndex < 0) {
 			return;
