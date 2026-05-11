@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import './App.css'
 
 type NavItem = {
@@ -15,21 +15,47 @@ type ServerInfo = {
 }
 
 type SectionKey = 'DOMAIN' | 'NODE' | 'SVRGROUP' | 'SERVER' | 'SERVICE' | 'GATEWAY'
-
 type TableValue = string | number | null | undefined
 
-type SectionTable = {
+type Column = {
+  key: string
+  label: string
+}
+
+type SectionDefinition = {
   label: SectionKey
   title: string
   endpoint: string
-  columns: string[]
-  rows: Array<Record<string, TableValue>>
+  columns: Column[]
+  toRows: (items: Array<Record<string, TableValue>>) => TableRow[]
 }
 
-type ApiState = {
-  loading: boolean
-  error: string | null
+type TableRow = Record<string, TableValue>
+
+type PageResponse = {
+  content: Array<Record<string, TableValue>>
+  page: number
+  totalElements: number
+  last: boolean
 }
+
+type SectionState = {
+  rows: TableRow[]
+  total: number
+  page: number
+  last: boolean
+  loading: boolean
+}
+
+type SearchResult = {
+  section: SectionKey
+  name: string
+  related: string | null
+  matchedField: string
+  value: string | null
+}
+
+const pageSize = 100
 
 const navItems: NavItem[] = [
   { label: '개요', active: true },
@@ -40,133 +66,119 @@ const navItems: NavItem[] = [
   { label: '관리 설정' },
 ]
 
-const sectionDefinitions: Array<Omit<SectionTable, 'rows'>> = [
+const pick = (item: Record<string, TableValue>, keys: string[]) =>
+  keys.reduce<TableRow>((row, key) => {
+    row[key] = item[key]
+    return row
+  }, {})
+
+const sectionDefinitions: SectionDefinition[] = [
   {
     label: 'DOMAIN',
     title: '도메인',
     endpoint: 'domains',
-    columns: ['Name', 'DomainId', 'MaxUser', 'TportNo', 'MaxNode'],
+    columns: [
+      'domainName', 'domainId', 'shmkey', 'maxuser', 'minclh', 'maxclh', 'tportno', 'racport',
+      'blocktime', 'maxsvg', 'maxsvr', 'maxspr', 'maxsvc', 'maxsacall', 'maxcacall',
+      'maxtotalsvg', 'maxgw', 'maxcpc', 'maxcousin', 'maxcousinsvg', 'gwchkint',
+      'gwconnectTimeout', 'nclhchktime', 'nliveinq', 'ipcperm', 'maxnode', 'startLine', 'endLine',
+    ].map((key) => ({ key, label: key })),
+    toRows: (items) => items.map((item) => pick(item, sectionDefinitions[0].columns.map((column) => column.key))),
   },
   {
     label: 'NODE',
     title: '노드',
     endpoint: 'nodes',
-    columns: ['Name', 'Hostname', 'TmaxDir', 'AppDir', 'NodeType', 'MaxGwCpc'],
+    columns: [
+      'nodeName', 'hostname', 'tmaxdir', 'appdir', 'tmaxhome', 'pathdir', 'tlogdir', 'ulogdir',
+      'slogdir', 'nodetype', 'autobackup', 'maxgwcpc', 'maxgwsvr', 'clhopt', 'startLine', 'endLine',
+    ].map((key) => ({ key, label: key })),
+    toRows: (items) => items.map((item) => pick(item, sectionDefinitions[1].columns.map((column) => column.key))),
   },
   {
     label: 'SVRGROUP',
     title: '서버 그룹',
     endpoint: 'svrgroups',
-    columns: ['Name', 'Node', 'Cousin', 'Backup', 'Load', 'EnvFile'],
+    columns: ['svrgroupName', 'nodename', 'cousin', 'loadValue', 'backup', 'envfile', 'startLine', 'endLine']
+      .map((key) => ({ key, label: key })),
+    toRows: (items) => items.map((item) => pick(item, sectionDefinitions[2].columns.map((column) => column.key))),
   },
   {
     label: 'SERVER',
     title: '서버',
     endpoint: 'server-configs',
-    columns: ['Name', 'Group', 'Type', 'Min', 'Max', 'Restart', 'MaxRestart', 'GPeriod'],
+    columns: [
+      'serverName', 'svgname', 'svrtype', 'clopt', 'minValue', 'maxValue', 'target', 'schedule',
+      'maxqcount', 'cpc', 'asqcount', 'restart', 'maxrstart', 'gperiod', 'startLine', 'endLine',
+    ].map((key) => ({ key, label: key })),
+    toRows: (items) => items.map((item) => pick(item, sectionDefinitions[3].columns.map((column) => column.key))),
   },
   {
     label: 'SERVICE',
     title: '서비스',
     endpoint: 'services',
-    columns: ['Name', 'Business', 'Server', 'SvcTime'],
+    columns: ['serviceName', 'svrname', 'svctime', 'businessCode', 'businessName', 'startLine', 'endLine']
+      .map((key) => ({ key, label: key })),
+    toRows: (items) => items.map((item) => pick(item, sectionDefinitions[4].columns.map((column) => column.key))),
   },
   {
     label: 'GATEWAY',
     title: '게이트웨이',
     endpoint: 'gateways',
-    columns: ['Name', 'Type', 'Node', 'Port', 'RemoteAddr', 'RemotePort'],
+    columns: [
+      'gatewayName', 'gwtype', 'nodename', 'portno', 'rgwportno', 'rgwaddr', 'cpc', 'clopt',
+      'loadValue', 'backupRgwaddr', 'backupRgwportno', 'startLine', 'endLine',
+    ].map((key) => ({ key, label: key })),
+    toRows: (items) => items.map((item) => pick(item, sectionDefinitions[5].columns.map((column) => column.key))),
   },
 ]
 
-const toTableRows: Record<SectionKey, (items: Array<Record<string, TableValue>>) => SectionTable['rows']> = {
-  DOMAIN: (items) =>
-    items.map((item) => ({
-      Name: item.domainName,
-      DomainId: item.domainId,
-      MaxUser: item.maxuser,
-      TportNo: item.tportno,
-      MaxNode: item.maxnode,
-    })),
-  NODE: (items) =>
-    items.map((item) => ({
-      Name: item.nodeName,
-      Hostname: item.hostname,
-      TmaxDir: item.tmaxdir,
-      AppDir: item.appdir,
-      NodeType: item.nodetype,
-      MaxGwCpc: item.maxgwcpc,
-    })),
-  SVRGROUP: (items) =>
-    items.map((item) => ({
-      Name: item.svrgroupName,
-      Node: item.nodename,
-      Cousin: item.cousin,
-      Backup: item.backup,
-      Load: item.loadValue,
-      EnvFile: item.envfile,
-    })),
-  SERVER: (items) =>
-    items.map((item) => ({
-      Name: item.serverName,
-      Group: item.svgname,
-      Type: item.svrtype,
-      Min: item.minValue,
-      Max: item.maxValue,
-      Restart: item.restart,
-      MaxRestart: item.maxrstart,
-      GPeriod: item.gperiod,
-    })),
-  SERVICE: (items) =>
-    items.map((item) => ({
-      Name: item.serviceName,
-      Business: item.businessName ?? item.businessCode,
-      Server: item.svrname,
-      SvcTime: item.svctime,
-    })),
-  GATEWAY: (items) =>
-    items.map((item) => ({
-      Name: item.gatewayName,
-      Type: item.gwtype,
-      Node: item.nodename,
-      Port: item.portno,
-      RemoteAddr: item.rgwaddr,
-      RemotePort: item.rgwportno,
-    })),
-}
+const initialSections = () =>
+  sectionDefinitions.reduce<Record<SectionKey, SectionState>>((states, section) => {
+    states[section.label] = { rows: [], total: 0, page: -1, last: false, loading: false }
+    return states
+  }, {} as Record<SectionKey, SectionState>)
 
 function App() {
   const [servers, setServers] = useState<ServerInfo[]>([])
   const [selectedServerId, setSelectedServerId] = useState<number | null>(null)
   const [selectedSection, setSelectedSection] = useState<SectionKey>('SERVER')
-  const [keyword, setKeyword] = useState('')
-  const [tables, setTables] = useState<SectionTable[]>(
-    sectionDefinitions.map((section) => ({ ...section, rows: [] })),
-  )
-  const [apiState, setApiState] = useState<ApiState>({ loading: true, error: null })
+  const [globalKeyword, setGlobalKeyword] = useState('')
+  const [sectionKeyword, setSectionKeyword] = useState('')
+  const [sections, setSections] = useState<Record<SectionKey, SectionState>>(initialSections)
+  const [loadingServers, setLoadingServers] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([])
+  const [searchLoading, setSearchLoading] = useState(false)
+
+  const currentDefinition = sectionDefinitions.find((section) => section.label === selectedSection) ?? sectionDefinitions[0]
+  const currentState = sections[selectedSection]
+  const selectedServer = servers.find((server) => server.serverId === selectedServerId) ?? null
+  const isGlobalSearch = globalKeyword.trim().length > 0
 
   useEffect(() => {
     let ignore = false
 
     async function loadServers() {
       try {
-        setApiState({ loading: true, error: null })
+        setLoadingServers(true)
         const response = await fetch('/api/servers')
         if (!response.ok) {
           throw new Error('서버 목록을 불러오지 못했습니다.')
         }
         const data = (await response.json()) as ServerInfo[]
-        if (ignore) {
-          return
-        }
-        setServers(data)
-        setSelectedServerId((currentServerId) => currentServerId ?? data[0]?.serverId ?? null)
-        if (data.length === 0) {
-          setApiState({ loading: false, error: '조회할 서버가 없습니다.' })
-        }
-      } catch (error) {
         if (!ignore) {
-          setApiState({ loading: false, error: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.' })
+          setServers(data)
+          setSelectedServerId((serverId) => serverId ?? data[0]?.serverId ?? null)
+          setError(data.length === 0 ? '조회할 서버가 없습니다.' : null)
+        }
+      } catch (caught) {
+        if (!ignore) {
+          setError(caught instanceof Error ? caught.message : '알 수 없는 오류가 발생했습니다.')
+        }
+      } finally {
+        if (!ignore) {
+          setLoadingServers(false)
         }
       }
     }
@@ -178,63 +190,128 @@ function App() {
     }
   }, [])
 
+  const loadSectionPage = useCallback(async (sectionKey: SectionKey, page: number, append: boolean) => {
+    if (selectedServerId === null) {
+      return
+    }
+
+    const definition = sectionDefinitions.find((section) => section.label === sectionKey)
+    if (!definition) {
+      return
+    }
+
+    setSections((current) => ({
+      ...current,
+      [sectionKey]: { ...current[sectionKey], loading: true },
+    }))
+
+    try {
+      const response = await fetch(`/api/servers/${selectedServerId}/${definition.endpoint}/page?page=${page}&size=${pageSize}`)
+      if (!response.ok) {
+        throw new Error(`${definition.title} 설정을 불러오지 못했습니다.`)
+      }
+      const data = (await response.json()) as PageResponse
+      const rows = definition.toRows(data.content)
+
+      setSections((current) => ({
+        ...current,
+        [sectionKey]: {
+          rows: append ? [...current[sectionKey].rows, ...rows] : rows,
+          total: data.totalElements,
+          page: data.page,
+          last: data.last,
+          loading: false,
+        },
+      }))
+      setError(null)
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : '알 수 없는 오류가 발생했습니다.')
+      setSections((current) => ({
+        ...current,
+        [sectionKey]: { ...current[sectionKey], loading: false },
+      }))
+    }
+  }, [selectedServerId])
+
   useEffect(() => {
     if (selectedServerId === null) {
       return
     }
 
-    let ignore = false
+    sectionDefinitions.forEach((section) => {
+      loadSectionPage(section.label, 0, false)
+    })
+  }, [loadSectionPage, selectedServerId])
 
-    async function loadSectionTables() {
+  useEffect(() => {
+    if (selectedServerId === null || !globalKeyword.trim()) {
+      return
+    }
+
+    const controller = new AbortController()
+    const timer = window.setTimeout(async () => {
       try {
-        setApiState({ loading: true, error: null })
-        const nextTables = await Promise.all(
-          sectionDefinitions.map(async (section) => {
-            const response = await fetch(`/api/servers/${selectedServerId}/${section.endpoint}`)
-            if (!response.ok) {
-              throw new Error(`${section.title} 설정을 불러오지 못했습니다.`)
-            }
-            const items = (await response.json()) as Array<Record<string, TableValue>>
-            return {
-              ...section,
-              rows: toTableRows[section.label](items),
-            }
-          }),
-        )
-        if (!ignore) {
-          setTables(nextTables)
-          setApiState({ loading: false, error: null })
+        setSearchLoading(true)
+        const params = new URLSearchParams({ keyword: globalKeyword.trim() })
+        const response = await fetch(`/api/servers/${selectedServerId}/search?${params.toString()}`, {
+          signal: controller.signal,
+        })
+        if (!response.ok) {
+          throw new Error('검색 결과를 불러오지 못했습니다.')
         }
-      } catch (error) {
-        if (!ignore) {
-          setApiState({ loading: false, error: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.' })
+        setSearchResults((await response.json()) as SearchResult[])
+      } catch (caught) {
+        if (!controller.signal.aborted) {
+          setError(caught instanceof Error ? caught.message : '알 수 없는 오류가 발생했습니다.')
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setSearchLoading(false)
         }
       }
-    }
-
-    loadSectionTables()
+    }, 300)
 
     return () => {
-      ignore = true
+      controller.abort()
+      window.clearTimeout(timer)
     }
-  }, [selectedServerId])
+  }, [globalKeyword, selectedServerId])
 
-  const selectedServer = servers.find((server) => server.serverId === selectedServerId) ?? null
-  const currentTable = useMemo(
-    () => tables.find((section) => section.label === selectedSection) ?? tables[0],
-    [selectedSection, tables],
-  )
   const filteredRows = useMemo(() => {
-    const normalizedKeyword = keyword.trim().toLowerCase()
+    const normalizedKeyword = sectionKeyword.trim().toLowerCase()
     if (!normalizedKeyword) {
-      return currentTable.rows
+      return currentState.rows
     }
-    return currentTable.rows.filter((row) =>
-      currentTable.columns.some((column) =>
-        String(row[column] ?? '').toLowerCase().includes(normalizedKeyword),
+    return currentState.rows.filter((row) =>
+      currentDefinition.columns.some((column) =>
+        String(row[column.key] ?? '').toLowerCase().includes(normalizedKeyword),
       ),
     )
-  }, [currentTable, keyword])
+  }, [currentDefinition.columns, currentState.rows, sectionKeyword])
+
+  const loadNextPage = () => {
+    if (isGlobalSearch || sectionKeyword.trim() || currentState.loading || currentState.last) {
+      return
+    }
+    loadSectionPage(selectedSection, currentState.page + 1, true)
+  }
+
+  const handleServerChange = (serverId: number) => {
+    setSelectedServerId(serverId)
+    setSections(initialSections())
+    setSectionKeyword('')
+    setGlobalKeyword('')
+    setSearchResults([])
+    setSearchLoading(false)
+  }
+
+  const handleGlobalKeywordChange = (keyword: string) => {
+    setGlobalKeyword(keyword)
+    if (!keyword.trim()) {
+      setSearchResults([])
+      setSearchLoading(false)
+    }
+  }
 
   return (
     <main className="app-shell">
@@ -265,7 +342,7 @@ function App() {
           <div className="header-tools" aria-label="조회 조건">
             <select
               value={selectedServerId ?? ''}
-              onChange={(event) => setSelectedServerId(Number(event.target.value))}
+              onChange={(event) => handleServerChange(Number(event.target.value))}
             >
               {servers.map((server) => (
                 <option key={server.serverId} value={server.serverId}>
@@ -276,24 +353,27 @@ function App() {
             <div className="search-box">
               <span aria-hidden="true">/</span>
               <input
-                value={keyword}
-                onChange={(event) => setKeyword(event.target.value)}
-                placeholder="현재 섹션에서 검색"
+                value={globalKeyword}
+                onChange={(event) => handleGlobalKeywordChange(event.target.value)}
+                placeholder="전체 설정에서 검색"
               />
             </div>
           </div>
         </header>
 
         <section className="section-card-grid" aria-label="설정 섹션 요약">
-          {tables.map((section) => (
+          {sectionDefinitions.map((section) => (
             <button
               key={section.label}
               type="button"
-              className={section.label === selectedSection ? 'section-card active' : 'section-card'}
-              onClick={() => setSelectedSection(section.label)}
+              className={section.label === selectedSection && !isGlobalSearch ? 'section-card active' : 'section-card'}
+              onClick={() => {
+                setSelectedSection(section.label)
+                setGlobalKeyword('')
+              }}
             >
               <span>{section.label}</span>
-              <strong>{section.rows.length}</strong>
+              <strong>{sections[section.label].total}</strong>
             </button>
           ))}
         </section>
@@ -301,42 +381,95 @@ function App() {
         <section className="panel table-panel">
           <div className="panel-header table-heading">
             <div>
-              <h2>{currentTable.title} 설정</h2>
+              <h2>{isGlobalSearch ? '전체 검색 결과' : `${currentDefinition.title} 설정`}</h2>
               <p>
-                {currentTable.label} 섹션 · 총 {currentTable.rows.length}건
-                {keyword.trim() ? ` · 검색 결과 ${filteredRows.length}건` : ''}
+                {isGlobalSearch
+                  ? `전체 섹션 · 검색 결과 ${searchResults.length}건`
+                  : `${currentDefinition.label} 섹션 · 총 ${currentState.total}건 · 표시 ${filteredRows.length}건`}
               </p>
             </div>
-            <div className="table-actions">
-              <button type="button">필터</button>
-              <button type="button">컬럼</button>
-            </div>
+            {!isGlobalSearch ? (
+              <div className="table-actions">
+                <div className="table-search">
+                  <span aria-hidden="true">/</span>
+                  <input
+                    value={sectionKeyword}
+                    onChange={(event) => setSectionKeyword(event.target.value)}
+                    placeholder="현재 섹션 검색"
+                  />
+                </div>
+                <button type="button">필터</button>
+                <button type="button">컬럼</button>
+              </div>
+            ) : null}
           </div>
 
-          {apiState.error ? <div className="empty-state">{apiState.error}</div> : null}
-          {apiState.loading ? <div className="empty-state">설정 데이터를 불러오는 중입니다.</div> : null}
+          {error ? <div className="empty-state">{error}</div> : null}
+          {loadingServers || searchLoading ? <div className="empty-state">데이터를 불러오는 중입니다.</div> : null}
 
-          {!apiState.error && !apiState.loading ? (
+          {!error && !loadingServers && isGlobalSearch ? (
             <div className="table-scroll">
               <table>
                 <thead>
                   <tr>
-                    {currentTable.columns.map((column) => (
-                      <th key={column}>{column}</th>
+                    <th>section</th>
+                    <th>name</th>
+                    <th>related</th>
+                    <th>matchedField</th>
+                    <th>value</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {searchResults.map((result, index) => (
+                    <tr key={`${result.section}-${result.name}-${result.matchedField}-${index}`}>
+                      <td>{result.section}</td>
+                      <td><strong>{result.name}</strong></td>
+                      <td>{result.related ?? '-'}</td>
+                      <td>{result.matchedField}</td>
+                      <td>{result.value ?? '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {!searchLoading && searchResults.length === 0 ? <div className="empty-state">검색 결과가 없습니다.</div> : null}
+            </div>
+          ) : null}
+
+          {!error && !loadingServers && !isGlobalSearch ? (
+            <div
+              className="table-scroll"
+              onScroll={(event) => {
+                const target = event.currentTarget
+                if (target.scrollTop + target.clientHeight >= target.scrollHeight - 80) {
+                  loadNextPage()
+                }
+              }}
+            >
+              <table>
+                <thead>
+                  <tr>
+                    {currentDefinition.columns.map((column) => (
+                      <th key={column.key}>{column.label}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {filteredRows.map((row, rowIndex) => (
-                    <tr key={`${String(row.Name)}-${rowIndex}`}>
-                      {currentTable.columns.map((column) => (
-                        <td key={column}>{column === 'Name' ? <strong>{row[column] ?? '-'}</strong> : row[column] ?? '-'}</td>
+                    <tr key={`${String(row[currentDefinition.columns[0].key])}-${rowIndex}`}>
+                      {currentDefinition.columns.map((column, columnIndex) => (
+                        <td key={column.key}>
+                          {columnIndex === 0 ? <strong>{row[column.key] ?? '-'}</strong> : row[column.key] ?? '-'}
+                        </td>
                       ))}
                     </tr>
                   ))}
                 </tbody>
               </table>
-              {filteredRows.length === 0 ? <div className="empty-state">표시할 데이터가 없습니다.</div> : null}
+              {currentState.loading ? <div className="empty-state">다음 데이터를 불러오는 중입니다.</div> : null}
+              {!currentState.loading && filteredRows.length === 0 ? <div className="empty-state">표시할 데이터가 없습니다.</div> : null}
+              {!currentState.loading && currentState.last && currentState.rows.length > 0 ? (
+                <div className="empty-state">마지막 데이터입니다.</div>
+              ) : null}
             </div>
           ) : null}
         </section>

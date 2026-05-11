@@ -244,6 +244,7 @@
 
 .table-actions {
   display: flex;
+  align-items: center;
   gap: 8px;
 }
 
@@ -259,8 +260,39 @@
   cursor: pointer;
 }
 
+.table-search {
+  height: 32px;
+  min-width: 220px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #23252a;
+  border-radius: 8px;
+  background: #141516;
+  padding: 0 10px;
+  color: #d0d6e0;
+}
+
+.table-search span {
+  color: #5e6ad2;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.table-search input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #f7f8f8;
+  font: inherit;
+  font-size: 12px;
+}
+
 .table-scroll {
-  overflow-x: auto;
+  max-height: calc(100vh - 286px);
+  overflow: auto;
 }
 
 .empty-state {
@@ -285,6 +317,9 @@ td {
 }
 
 th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
   color: #8a8f98;
   background: #141516;
   font-size: 11px;
@@ -306,13 +341,13 @@ th:first-child,
 td:first-child {
   position: sticky;
   left: 0;
-  z-index: 1;
+  z-index: 2;
   border-right: 1px solid #23252a;
   background: #0f1011;
 }
 
 th:first-child {
-  z-index: 2;
+  z-index: 3;
   background: #141516;
 }
 
