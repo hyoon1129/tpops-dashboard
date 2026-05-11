@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import './App.css'
 
 type NavItem = {
@@ -6,16 +6,29 @@ type NavItem = {
   active?: boolean
 }
 
-type Section = {
-  label: string
-  title: string
-  count: number
-  note: string
+type ServerInfo = {
+  serverId: number
+  serverName: string
+  serverIp: string
+  environment: string
+  description: string | null
 }
 
-type SectionTable = Section & {
+type SectionKey = 'DOMAIN' | 'NODE' | 'SVRGROUP' | 'SERVER' | 'SERVICE' | 'GATEWAY'
+
+type TableValue = string | number | null | undefined
+
+type SectionTable = {
+  label: SectionKey
+  title: string
+  endpoint: string
   columns: string[]
-  rows: Array<Record<string, string | number>>
+  rows: Array<Record<string, TableValue>>
+}
+
+type ApiState = {
+  loading: boolean
+  error: string | null
 }
 
 const navItems: NavItem[] = [
@@ -27,89 +40,201 @@ const navItems: NavItem[] = [
   { label: '관리 설정' },
 ]
 
-const sectionTables: SectionTable[] = [
+const sectionDefinitions: Array<Omit<SectionTable, 'rows'>> = [
   {
     label: 'DOMAIN',
     title: '도메인',
-    count: 1,
-    note: '도메인 기본 설정',
+    endpoint: 'domains',
     columns: ['Name', 'DomainId', 'MaxUser', 'TportNo', 'MaxNode'],
-    rows: [{ Name: 'TPDOM01', DomainId: 1, MaxUser: 300, TportNo: 8888, MaxNode: 2 }],
   },
   {
     label: 'NODE',
     title: '노드',
-    count: 2,
-    note: '서버 호스트 단위',
-    columns: ['Name', 'Hostname', 'TmaxDir', 'AppDir'],
-    rows: [
-      { Name: 'COR01', Hostname: 'tp-cor01', TmaxDir: '/app/tmax/cor01', AppDir: '/app/tmax/cor01/appbin' },
-      { Name: 'COR02', Hostname: 'tp-cor02', TmaxDir: '/app/tmax/cor02', AppDir: '/app/tmax/cor02/appbin' },
-    ],
+    endpoint: 'nodes',
+    columns: ['Name', 'Hostname', 'TmaxDir', 'AppDir', 'NodeType', 'MaxGwCpc'],
   },
   {
     label: 'SVRGROUP',
     title: '서버 그룹',
-    count: 5,
-    note: '업무별 서버 그룹',
-    columns: ['Name', 'Node', 'Cousin', 'Backup', 'Load'],
-    rows: [
-      { Name: 'AAA_SVG', Node: 'COR01', Cousin: 'ABA_SVG', Backup: 'AAA_BAK_SVG', Load: 1 },
-      { Name: 'ABA_SVG', Node: 'COR01', Cousin: 'AAA_SVG', Backup: 'ABA_BAK_SVG', Load: 2 },
-      { Name: 'ORD_SVG', Node: 'COR02', Cousin: 'PAY_SVG', Backup: 'ORD_BAK_SVG', Load: 1 },
-      { Name: 'PAY_SVG', Node: 'COR02', Cousin: 'ORD_SVG', Backup: 'PAY_BAK_SVG', Load: 2 },
-      { Name: 'COM_SVG', Node: 'COR01', Cousin: 'ORD_SVG', Backup: 'COM_BAK_SVG', Load: 1 },
-    ],
+    endpoint: 'svrgroups',
+    columns: ['Name', 'Node', 'Cousin', 'Backup', 'Load', 'EnvFile'],
   },
   {
     label: 'SERVER',
     title: '서버',
-    count: 6,
-    note: '구동 서버 설정',
-    columns: ['Name', 'Business', 'Group', 'Node', 'Min', 'Max', 'Services'],
-    rows: [
-      { Name: 'AAA001SVR', Business: '계좌관리', Group: 'AAA_SVG', Node: 'COR01', Min: 2, Max: 5, Services: 2 },
-      { Name: 'AAA002SVR', Business: '계좌관리', Group: 'AAA_SVG', Node: 'COR01', Min: 1, Max: 3, Services: 2 },
-      { Name: 'ABA001SVR', Business: '고객관리', Group: 'ABA_SVG', Node: 'COR01', Min: 2, Max: 4, Services: 4 },
-      { Name: 'ORD001SVR', Business: '주문관리', Group: 'ORD_SVG', Node: 'COR02', Min: 3, Max: 8, Services: 4 },
-      { Name: 'PAY001SVR', Business: '결제관리', Group: 'PAY_SVG', Node: 'COR02', Min: 2, Max: 6, Services: 3 },
-      { Name: 'COM001SVR', Business: '공통업무', Group: 'COM_SVG', Node: 'COR01', Min: 1, Max: 4, Services: 2 },
-    ],
+    endpoint: 'server-configs',
+    columns: ['Name', 'Group', 'Type', 'Min', 'Max', 'Restart', 'MaxRestart', 'GPeriod'],
   },
   {
     label: 'SERVICE',
     title: '서비스',
-    count: 17,
-    note: '업무 서비스 코드',
+    endpoint: 'services',
     columns: ['Name', 'Business', 'Server', 'SvcTime'],
-    rows: [
-      { Name: 'SAAA100U', Business: '계좌관리', Server: 'AAA001SVR', SvcTime: 30 },
-      { Name: 'SAAA101Q', Business: '계좌관리', Server: 'AAA001SVR', SvcTime: 20 },
-      { Name: 'SABA110U', Business: '고객관리', Server: 'ABA001SVR', SvcTime: 30 },
-      { Name: 'SORD200U', Business: '주문관리', Server: 'ORD001SVR', SvcTime: 40 },
-      { Name: 'SPAY300U', Business: '결제관리', Server: 'PAY001SVR', SvcTime: 35 },
-      { Name: 'SCOM900Q', Business: '공통업무', Server: 'COM001SVR', SvcTime: 15 },
-    ],
   },
   {
     label: 'GATEWAY',
     title: '게이트웨이',
-    count: 2,
-    note: '외부 연동 포트',
-    columns: ['Name', 'Node', 'Port', 'RemoteAddr', 'RemotePort'],
-    rows: [
-      { Name: 'GW_COR01', Node: 'COR01', Port: 9101, RemoteAddr: '10.10.20.11', RemotePort: 9201 },
-      { Name: 'GW_COR02', Node: 'COR02', Port: 9102, RemoteAddr: '10.10.30.11', RemotePort: 9301 },
-    ],
+    endpoint: 'gateways',
+    columns: ['Name', 'Type', 'Node', 'Port', 'RemoteAddr', 'RemotePort'],
   },
 ]
 
+const toTableRows: Record<SectionKey, (items: Array<Record<string, TableValue>>) => SectionTable['rows']> = {
+  DOMAIN: (items) =>
+    items.map((item) => ({
+      Name: item.domainName,
+      DomainId: item.domainId,
+      MaxUser: item.maxuser,
+      TportNo: item.tportno,
+      MaxNode: item.maxnode,
+    })),
+  NODE: (items) =>
+    items.map((item) => ({
+      Name: item.nodeName,
+      Hostname: item.hostname,
+      TmaxDir: item.tmaxdir,
+      AppDir: item.appdir,
+      NodeType: item.nodetype,
+      MaxGwCpc: item.maxgwcpc,
+    })),
+  SVRGROUP: (items) =>
+    items.map((item) => ({
+      Name: item.svrgroupName,
+      Node: item.nodename,
+      Cousin: item.cousin,
+      Backup: item.backup,
+      Load: item.loadValue,
+      EnvFile: item.envfile,
+    })),
+  SERVER: (items) =>
+    items.map((item) => ({
+      Name: item.serverName,
+      Group: item.svgname,
+      Type: item.svrtype,
+      Min: item.minValue,
+      Max: item.maxValue,
+      Restart: item.restart,
+      MaxRestart: item.maxrstart,
+      GPeriod: item.gperiod,
+    })),
+  SERVICE: (items) =>
+    items.map((item) => ({
+      Name: item.serviceName,
+      Business: item.businessName ?? item.businessCode,
+      Server: item.svrname,
+      SvcTime: item.svctime,
+    })),
+  GATEWAY: (items) =>
+    items.map((item) => ({
+      Name: item.gatewayName,
+      Type: item.gwtype,
+      Node: item.nodename,
+      Port: item.portno,
+      RemoteAddr: item.rgwaddr,
+      RemotePort: item.rgwportno,
+    })),
+}
+
 function App() {
-  const [selectedSection, setSelectedSection] = useState('SERVER')
-  const currentTable = useMemo(
-    () => sectionTables.find((section) => section.label === selectedSection) ?? sectionTables[0],
-    [selectedSection],
+  const [servers, setServers] = useState<ServerInfo[]>([])
+  const [selectedServerId, setSelectedServerId] = useState<number | null>(null)
+  const [selectedSection, setSelectedSection] = useState<SectionKey>('SERVER')
+  const [keyword, setKeyword] = useState('')
+  const [tables, setTables] = useState<SectionTable[]>(
+    sectionDefinitions.map((section) => ({ ...section, rows: [] })),
   )
+  const [apiState, setApiState] = useState<ApiState>({ loading: true, error: null })
+
+  useEffect(() => {
+    let ignore = false
+
+    async function loadServers() {
+      try {
+        setApiState({ loading: true, error: null })
+        const response = await fetch('/api/servers')
+        if (!response.ok) {
+          throw new Error('서버 목록을 불러오지 못했습니다.')
+        }
+        const data = (await response.json()) as ServerInfo[]
+        if (ignore) {
+          return
+        }
+        setServers(data)
+        setSelectedServerId((currentServerId) => currentServerId ?? data[0]?.serverId ?? null)
+        if (data.length === 0) {
+          setApiState({ loading: false, error: '조회할 서버가 없습니다.' })
+        }
+      } catch (error) {
+        if (!ignore) {
+          setApiState({ loading: false, error: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.' })
+        }
+      }
+    }
+
+    loadServers()
+
+    return () => {
+      ignore = true
+    }
+  }, [])
+
+  useEffect(() => {
+    if (selectedServerId === null) {
+      return
+    }
+
+    let ignore = false
+
+    async function loadSectionTables() {
+      try {
+        setApiState({ loading: true, error: null })
+        const nextTables = await Promise.all(
+          sectionDefinitions.map(async (section) => {
+            const response = await fetch(`/api/servers/${selectedServerId}/${section.endpoint}`)
+            if (!response.ok) {
+              throw new Error(`${section.title} 설정을 불러오지 못했습니다.`)
+            }
+            const items = (await response.json()) as Array<Record<string, TableValue>>
+            return {
+              ...section,
+              rows: toTableRows[section.label](items),
+            }
+          }),
+        )
+        if (!ignore) {
+          setTables(nextTables)
+          setApiState({ loading: false, error: null })
+        }
+      } catch (error) {
+        if (!ignore) {
+          setApiState({ loading: false, error: error instanceof Error ? error.message : '알 수 없는 오류가 발생했습니다.' })
+        }
+      }
+    }
+
+    loadSectionTables()
+
+    return () => {
+      ignore = true
+    }
+  }, [selectedServerId])
+
+  const selectedServer = servers.find((server) => server.serverId === selectedServerId) ?? null
+  const currentTable = useMemo(
+    () => tables.find((section) => section.label === selectedSection) ?? tables[0],
+    [selectedSection, tables],
+  )
+  const filteredRows = useMemo(() => {
+    const normalizedKeyword = keyword.trim().toLowerCase()
+    if (!normalizedKeyword) {
+      return currentTable.rows
+    }
+    return currentTable.rows.filter((row) =>
+      currentTable.columns.some((column) =>
+        String(row[column] ?? '').toLowerCase().includes(normalizedKeyword),
+      ),
+    )
+  }, [currentTable, keyword])
 
   return (
     <main className="app-shell">
@@ -133,25 +258,34 @@ function App() {
       <section className="workspace">
         <header className="workspace-header">
           <div>
-            <p className="eyebrow">TPDOM01</p>
-            <h1>운영 설정 대시보드</h1>
+            <p className="eyebrow">{selectedServer?.environment ?? 'TPOPS'}</p>
+            <h1>{selectedServer?.serverName ?? '운영 설정 대시보드'}</h1>
           </div>
 
           <div className="header-tools" aria-label="조회 조건">
-            <select defaultValue="TPDOM01">
-              <option value="TPDOM01">TPDOM01</option>
-              <option value="COR01">COR01</option>
-              <option value="COR02">COR02</option>
+            <select
+              value={selectedServerId ?? ''}
+              onChange={(event) => setSelectedServerId(Number(event.target.value))}
+            >
+              {servers.map((server) => (
+                <option key={server.serverId} value={server.serverId}>
+                  {server.serverName}
+                </option>
+              ))}
             </select>
             <div className="search-box">
               <span aria-hidden="true">/</span>
-              <input placeholder="전체 설정에서 검색" />
+              <input
+                value={keyword}
+                onChange={(event) => setKeyword(event.target.value)}
+                placeholder="현재 섹션에서 검색"
+              />
             </div>
           </div>
         </header>
 
         <section className="section-card-grid" aria-label="설정 섹션 요약">
-          {sectionTables.map((section) => (
+          {tables.map((section) => (
             <button
               key={section.label}
               type="button"
@@ -159,7 +293,7 @@ function App() {
               onClick={() => setSelectedSection(section.label)}
             >
               <span>{section.label}</span>
-              <strong>{section.count}</strong>
+              <strong>{section.rows.length}</strong>
             </button>
           ))}
         </section>
@@ -169,7 +303,8 @@ function App() {
             <div>
               <h2>{currentTable.title} 설정</h2>
               <p>
-                {currentTable.label} 섹션 · 총 {currentTable.count}건
+                {currentTable.label} 섹션 · 총 {currentTable.rows.length}건
+                {keyword.trim() ? ` · 검색 결과 ${filteredRows.length}건` : ''}
               </p>
             </div>
             <div className="table-actions">
@@ -178,26 +313,32 @@ function App() {
             </div>
           </div>
 
-          <div className="table-scroll">
-            <table>
-              <thead>
-                <tr>
-                  {currentTable.columns.map((column) => (
-                    <th key={column}>{column}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {currentTable.rows.map((row) => (
-                  <tr key={String(row.Name)}>
+          {apiState.error ? <div className="empty-state">{apiState.error}</div> : null}
+          {apiState.loading ? <div className="empty-state">설정 데이터를 불러오는 중입니다.</div> : null}
+
+          {!apiState.error && !apiState.loading ? (
+            <div className="table-scroll">
+              <table>
+                <thead>
+                  <tr>
                     {currentTable.columns.map((column) => (
-                      <td key={column}>{column === 'Name' ? <strong>{row[column]}</strong> : row[column]}</td>
+                      <th key={column}>{column}</th>
                     ))}
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {filteredRows.map((row, rowIndex) => (
+                    <tr key={`${String(row.Name)}-${rowIndex}`}>
+                      {currentTable.columns.map((column) => (
+                        <td key={column}>{column === 'Name' ? <strong>{row[column] ?? '-'}</strong> : row[column] ?? '-'}</td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {filteredRows.length === 0 ? <div className="empty-state">표시할 데이터가 없습니다.</div> : null}
+            </div>
+          ) : null}
         </section>
       </section>
     </main>

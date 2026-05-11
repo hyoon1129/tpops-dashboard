@@ -263,6 +263,12 @@
   overflow-x: auto;
 }
 
+.empty-state {
+  padding: 28px 18px;
+  color: #8a8f98;
+  font-size: 12px;
+}
+
 table {
   width: 100%;
   min-width: 860px;
