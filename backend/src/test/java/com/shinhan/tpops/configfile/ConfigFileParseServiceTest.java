@@ -77,7 +77,7 @@ class ConfigFileParseServiceTest {
 		assertThat(nodeConfigRepository.findByConfigFileId(response.fileId())).hasSize(2);
 		assertThat(svrgroupConfigRepository.findByConfigFileId(response.fileId())).hasSize(5);
 		assertThat(serverConfigRepository.findByConfigFileId(response.fileId())).hasSize(6);
-		assertThat(serviceConfigRepository.findByConfigFileId(response.fileId())).hasSize(17);
+		assertThat(serviceConfigRepository.findByConfigFileId(response.fileId())).hasSize(19);
 		assertThat(gatewayConfigRepository.findByConfigFileId(response.fileId())).hasSize(2);
 
 		NodeConfig cor01 = nodeConfigRepository.findByConfigFileId(response.fileId()).stream()
@@ -105,6 +105,24 @@ class ConfigFileParseServiceTest {
 			.singleElement()
 			.satisfies(serviceConfig -> {
 				assertThat(serviceConfig.getServerConfig()).isNotNull();
+				assertThat(serviceConfig.getBusinessCode()).isNotNull();
+				assertThat(serviceConfig.getBusinessCode().getCode()).isEqualTo("ABA");
+				assertThat(serviceConfig.getBusinessCode().getBusinessName()).isEqualTo("고객관리");
+			});
+
+		assertThat(serviceConfigRepository.findByConfigFileId(response.fileId()))
+			.filteredOn(serviceConfig -> serviceConfig.getServiceName().equals("SAAA709U4"))
+			.singleElement()
+			.satisfies(serviceConfig -> {
+				assertThat(serviceConfig.getBusinessCode()).isNotNull();
+				assertThat(serviceConfig.getBusinessCode().getCode()).isEqualTo("AAA");
+				assertThat(serviceConfig.getBusinessCode().getBusinessName()).isEqualTo("계좌관리");
+			});
+
+		assertThat(serviceConfigRepository.findByConfigFileId(response.fileId()))
+			.filteredOn(serviceConfig -> serviceConfig.getServiceName().equals("XABA999Q"))
+			.singleElement()
+			.satisfies(serviceConfig -> {
 				assertThat(serviceConfig.getBusinessCode()).isNotNull();
 				assertThat(serviceConfig.getBusinessCode().getCode()).isEqualTo("ABA");
 				assertThat(serviceConfig.getBusinessCode().getBusinessName()).isEqualTo("고객관리");
@@ -190,6 +208,8 @@ class ConfigFileParseServiceTest {
 			SAAA101Q    SVRNAME = AAA001SVR, SVCTIME = 20
 			SAAA102U    SVRNAME = AAA002SVR, SVCTIME = 30
 			SAAA103Q    SVRNAME = AAA002SVR, SVCTIME = 20
+			SAAA709U4   SVRNAME = AAA002SVR, SVCTIME = 30
+			XABA999Q    SVRNAME = ABA001SVR, SVCTIME = 30
 			SABA110U    SVRNAME = ABA001SVR, SVCTIME = 30
 			SABA111Q    SVRNAME = ABA001SVR, SVCTIME = 20
 			SABA112U    SVRNAME = ABA001SVR, SVCTIME = 30

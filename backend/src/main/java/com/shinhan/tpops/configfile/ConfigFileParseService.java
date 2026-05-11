@@ -29,8 +29,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -42,8 +40,6 @@ import org.springframework.web.server.ResponseStatusException;
 @Service
 @RequiredArgsConstructor
 public class ConfigFileParseService {
-
-	private static final Pattern BUSINESS_CODE_PATTERN = Pattern.compile("^S([A-Z]{3})\\d{3}[A-Z]$");
 
 	private final ServerInfoRepository serverInfoRepository;
 	private final ConfigFileRepository configFileRepository;
@@ -238,10 +234,10 @@ public class ConfigFileParseService {
 	}
 
 	private BusinessCode findBusinessCode(String serviceName) {
-		Matcher matcher = BUSINESS_CODE_PATTERN.matcher(serviceName);
-		if (!matcher.matches()) {
+		if (serviceName == null || serviceName.length() < 4) {
 			return null;
 		}
-		return businessCodeRepository.findById(matcher.group(1)).orElse(null);
+		String code = serviceName.substring(1, 4).toUpperCase();
+		return businessCodeRepository.findById(code).orElse(null);
 	}
 }

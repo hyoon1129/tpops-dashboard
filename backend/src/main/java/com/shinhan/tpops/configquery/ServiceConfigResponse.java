@@ -20,11 +20,12 @@ public record ServiceConfigResponse(
 
 	public static ServiceConfigResponse from(ServiceConfig serviceConfig) {
 		BusinessCode businessCode = serviceConfig.getBusinessCode();
+		String serviceName = serviceConfig.getServiceName();
 		return new ServiceConfigResponse(
 			serviceConfig.getId(),
 			serviceConfig.getConfigFile().getId(),
 			serviceConfig.getServerConfig() == null ? null : serviceConfig.getServerConfig().getId(),
-			serviceConfig.getServiceName(),
+			serviceName,
 			serviceConfig.getSvrname(),
 			serviceConfig.getSvctime(),
 			businessCode == null ? null : businessCode.getCode(),
