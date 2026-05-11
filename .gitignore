@@ -45,6 +45,9 @@ out/
 *.log
 .env
 
+### TMAX config samples ###
+*.m
+
 ### Frontend ###
 node_modules/
 dist/
