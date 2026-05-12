@@ -300,7 +300,6 @@ export function RelationshipMap({ loading, tree }: RelationshipMapProps) {
                 inspected={inspectedKey === key}
                 isJumpTarget={jumpTargetKey === key}
                 isJumpAncestor={jumpAncestorKeys.has(key)}
-                jumpId={jumpId}
                 count={`${domain.nodes.length} NODE`}
                 key={rowName(domain.domain)}
                 label={rowName(domain.domain)}
@@ -320,7 +319,6 @@ export function RelationshipMap({ loading, tree }: RelationshipMapProps) {
                 inspected={inspectedKey === key}
                 isJumpTarget={jumpTargetKey === key}
                 isJumpAncestor={jumpAncestorKeys.has(key)}
-                jumpId={jumpId}
                 count={`${node.svrgroups.length} SVG`}
                 key={rowName(node.node)}
                 label={rowName(node.node)}
@@ -345,7 +343,6 @@ export function RelationshipMap({ loading, tree }: RelationshipMapProps) {
                 inspected={inspectedKey === key}
                 isJumpTarget={jumpTargetKey === key}
                 isJumpAncestor={jumpAncestorKeys.has(key)}
-                jumpId={jumpId}
                 count={`${group.servers.length} SERVER`}
                 key={rowName(group.svrgroup)}
                 label={rowName(group.svrgroup)}
@@ -371,7 +368,6 @@ export function RelationshipMap({ loading, tree }: RelationshipMapProps) {
                 inspected={inspectedKey === key}
                 isJumpTarget={jumpTargetKey === key}
                 isJumpAncestor={jumpAncestorKeys.has(key)}
-                jumpId={jumpId}
                 count={`${server.services.length} SERVICE`}
                 key={rowName(server.server)}
                 label={rowName(server.server)}
@@ -398,7 +394,6 @@ export function RelationshipMap({ loading, tree }: RelationshipMapProps) {
                 inspected={inspectedKey === key}
                 isJumpTarget={jumpTargetKey === key}
                 isJumpAncestor={false}
-                jumpId={jumpId}
                 key={rowName(service)}
                 label={rowName(service)}
                 onClick={() =>
@@ -488,16 +483,13 @@ type MapButtonProps = {
   inspected: boolean
   isJumpTarget: boolean
   isJumpAncestor: boolean
-  jumpId: number
   count?: string
   label: string
   onClick: () => void
   onInspect: () => void
 }
 
-function MapButton({ active, inspected, isJumpTarget, isJumpAncestor, jumpId: _jumpId, count, label, onClick, onInspect }: MapButtonProps) {
-  const ref = useRef<HTMLButtonElement>(null)
-
+function MapButton({ active, inspected, isJumpTarget, isJumpAncestor, count, label, onClick, onInspect }: MapButtonProps) {
   const classes = [
     'map-item',
     active && 'active',
@@ -507,12 +499,17 @@ function MapButton({ active, inspected, isJumpTarget, isJumpAncestor, jumpId: _j
   ].filter(Boolean).join(' ')
 
   return (
-    <button
-      ref={ref}
-
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       className={classes}
       onClick={onClick}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault()
+          onClick()
+        }
+      }}
     >
       <div className="map-item-main">
         <strong>{label}</strong>
@@ -533,6 +530,6 @@ function MapButton({ active, inspected, isJumpTarget, isJumpAncestor, jumpId: _j
           <span>{count}</span>
         </div>
       ) : null}
-    </button>
+    </div>
   )
 }
