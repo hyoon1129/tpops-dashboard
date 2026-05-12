@@ -1,4 +1,4 @@
-import { useCallback, useLayoutEffect, useRef, useState } from 'react'
+import { memo, useCallback, useLayoutEffect, useRef, useState } from 'react'
 import { highlightedText } from '../utils/highlight'
 import type { Column, SectionDefinition, SectionKey, SectionState, SortState, TableRow } from '../types/config'
 
@@ -48,7 +48,7 @@ function HeaderCell({ column, onSort, selectedSection, sortState }: HeaderCellPr
   )
 }
 
-export function ConfigTable({
+export const ConfigTable = memo(function ConfigTable({
   currentDefinition,
   currentState,
   filteredRows,
@@ -178,4 +178,4 @@ export function ConfigTable({
       </div>
     </div>
   )
-}
+})

@@ -301,6 +301,29 @@
   color: #62666d;
 }
 
+.search-clear {
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #737982;
+  padding: 0;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.search-clear:hover {
+  background: #23252a;
+  color: #f7f8f8;
+}
+
 .section-card-grid {
   position: sticky;
   top: 0;
@@ -487,6 +510,27 @@
   color: #f7f8f8;
   font: inherit;
   font-size: 13px;
+}
+
+.table-actions .table-search-clear {
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #737982;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.table-actions .table-search-clear:hover {
+  background: #23252a;
+  color: #f7f8f8;
 }
 
 .table-shell {

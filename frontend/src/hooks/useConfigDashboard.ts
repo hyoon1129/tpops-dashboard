@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react'
 import {
   initialSearchRows,
   initialSections,
@@ -41,6 +41,7 @@ export const useConfigDashboard = () => {
 
   const currentDefinition = sectionDefinitions.find((section) => section.label === selectedSection) ?? sectionDefinitions[0]
   const currentState = sections[selectedSection]
+  const deferredSectionKeyword = useDeferredValue(sectionKeyword)
   const selectedServer = servers.find((server) => server.serverId === selectedServerId) ?? null
   const isGlobalSearch = globalKeyword.trim().length > 0
   const globalSearchRowTotal = Object.values(searchRowsBySection).reduce((total, rows) => total + rows.length, 0)
@@ -106,7 +107,7 @@ export const useConfigDashboard = () => {
     return definition.toRows(data)
   }, [selectedServerId])
 
-  const compareRows = (column: Column, direction: SortState['direction']) => (left: TableRow, right: TableRow) => {
+  const compareRows = useCallback((column: Column, direction: SortState['direction']) => (left: TableRow, right: TableRow) => {
     const leftValue = left[column.key]
     const rightValue = right[column.key]
 
@@ -125,7 +126,7 @@ export const useConfigDashboard = () => {
       : String(leftValue).localeCompare(String(rightValue), 'ko', { numeric: true, sensitivity: 'base' })
 
     return direction === 'asc' ? result : -result
-  }
+  }, [])
 
   useEffect(() => {
     let ignore = false
@@ -275,7 +276,7 @@ export const useConfigDashboard = () => {
   }, [globalKeyword, sections, selectedServerId])
 
   const filteredRows = useMemo(() => {
-    const normalizedKeyword = sectionKeyword.trim().toLowerCase()
+    const normalizedKeyword = deferredSectionKeyword.trim().toLowerCase()
     if (!normalizedKeyword) {
       return currentState.rows
     }
@@ -284,9 +285,9 @@ export const useConfigDashboard = () => {
         String(row[column.key] ?? '').toLowerCase().includes(normalizedKeyword),
       ),
     )
-  }, [currentDefinition.columns, currentState.rows, sectionKeyword])
+  }, [currentDefinition.columns, currentState.rows, deferredSectionKeyword])
 
-  const handleSort = (column: Column) => {
+  const handleSort = useCallback((column: Column) => {
     const nextDirection = sortState?.section === selectedSection && sortState.key === column.sortKey && sortState.direction === 'asc'
       ? 'desc'
       : 'asc'
@@ -304,7 +305,7 @@ export const useConfigDashboard = () => {
         rows: [...current[selectedSection].rows].sort(compareRows(column, nextDirection)),
       },
     }))
-  }
+  }, [compareRows, selectedSection, sortState])
 
   const handleServerChange = (serverId: number) => {
     setSelectedServerId(serverId)
@@ -349,6 +350,7 @@ export const useConfigDashboard = () => {
     setActiveView('설정 목록')
     history.pushState(null, '', '/list')
     setSelectedSection(section)
+    setSectionKeyword('')
     setGlobalKeyword('')
   }
 
@@ -378,6 +380,7 @@ export const useConfigDashboard = () => {
     searchLoading,
     searchResults,
     searchResultsBySection,
+    deferredSectionKeyword,
     sectionKeyword,
     sections,
     selectSection,

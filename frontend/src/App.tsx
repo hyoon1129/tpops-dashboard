@@ -114,6 +114,16 @@ function App() {
                     onChange={(event) => dashboard.setSectionKeyword(event.target.value)}
                     placeholder="현재 섹션 검색"
                   />
+                  {dashboard.sectionKeyword ? (
+                    <button
+                      type="button"
+                      className="table-search-clear"
+                      aria-label="섹션 검색어 지우기"
+                      onClick={() => dashboard.setSectionKeyword('')}
+                    >
+                      x
+                    </button>
+                  ) : null}
                 </div>
                 <button type="button">필터</button>
                 <button type="button">컬럼</button>
@@ -148,7 +158,7 @@ function App() {
               currentState={dashboard.currentState}
               filteredRows={dashboard.filteredRows}
               onSort={dashboard.handleSort}
-              sectionKeyword={dashboard.sectionKeyword}
+              sectionKeyword={dashboard.deferredSectionKeyword}
               selectedSection={dashboard.selectedSection}
               sortState={dashboard.sortState}
             />

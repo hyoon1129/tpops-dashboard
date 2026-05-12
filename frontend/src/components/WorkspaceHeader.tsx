@@ -42,6 +42,16 @@ export function WorkspaceHeader({
             onChange={(event) => onGlobalKeywordChange(event.target.value)}
             placeholder="전체 설정에서 검색"
           />
+          {globalKeyword ? (
+            <button
+              type="button"
+              className="search-clear"
+              aria-label="전체 검색어 지우기"
+              onClick={() => onGlobalKeywordChange('')}
+            >
+              x
+            </button>
+          ) : null}
         </div>
       </div>
     </header>
