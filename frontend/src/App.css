@@ -573,6 +573,28 @@
 }
 
 /* inspector 내 섹션 배지 */
+.cell-null {
+  color: #3a3d44;
+}
+
+.db-badge {
+  display: inline-block;
+  border-radius: 5px;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  background: rgba(94, 106, 210, 0.15);
+  color: #a5aeef;
+}
+
+.db-badge[data-color="0"] { background: rgba(94, 106, 210, 0.15); color: #a5aeef; }
+.db-badge[data-color="1"] { background: rgba(56, 189, 148, 0.15); color: #4cc9a0; }
+.db-badge[data-color="2"] { background: rgba(245, 158, 11, 0.15); color: #f5a623; }
+.db-badge[data-color="3"] { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+.db-badge[data-color="4"] { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
+.db-badge[data-color="5"] { background: rgba(20, 184, 166, 0.15); color: #2dd4bf; }
+
 .inspector-section-badge {
   display: inline-block;
   border-radius: 5px;

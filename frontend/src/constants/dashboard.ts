@@ -127,18 +127,22 @@ export const sectionDefinitions: SectionDefinition[] = [
     endpoint: 'svrgroups',
     columns: columns([
       'NAME', 'nodename', 'cousin', 'loadValue', 'backup', 'envfile',
-    ], { NAME: 'svrgroupName' }),
+    ], { NAME: 'svrgroupName' }).map((col) => col.key === 'nodename' ? { ...col, badge: true } : col),
     toRows: (items) => items.map((item) => ({ NAME: item.svrgroupName, ...pick(item, sectionDefinitions[2].columns.slice(1).map((column) => column.key)) })),
   },
   {
     label: 'SERVER',
     title: '서버',
     endpoint: 'server-configs',
-    columns: columns([
-      'NAME', 'svgname', 'svrtype', 'minValue', 'maxValue', 'target', 'schedule',
-      'maxqcount', 'cpc', 'asqcount', 'restart', 'maxrstart', 'gperiod', 'clopt',
-    ], { NAME: 'serverName' }),
-    toRows: (items) => items.map((item) => ({ NAME: item.serverName, ...pick(item, sectionDefinitions[3].columns.slice(1).map((column) => column.key)) })),
+    columns: [
+      ...columns(['NAME', 'svgname'], { NAME: 'serverName' }),
+      { key: 'dbInfo', label: 'DB', sortKey: 'dbInfo', badge: true, sortable: false },
+      ...columns([
+        'svrtype', 'minValue', 'maxValue', 'target', 'schedule',
+        'maxqcount', 'cpc', 'asqcount', 'restart', 'maxrstart', 'gperiod', 'clopt',
+      ]),
+    ],
+    toRows: (items) => items.map((item) => ({ NAME: item.serverName, ...pick(item, ['svgname', 'dbInfo', 'svrtype', 'minValue', 'maxValue', 'target', 'schedule', 'maxqcount', 'cpc', 'asqcount', 'restart', 'maxrstart', 'gperiod', 'clopt']) })),
   },
   {
     label: 'SERVICE',
@@ -156,7 +160,7 @@ export const sectionDefinitions: SectionDefinition[] = [
     columns: columns([
       'NAME', 'gwtype', 'nodename', 'portno', 'rgwportno', 'rgwaddr', 'cpc',
       'loadValue', 'backupRgwaddr', 'backupRgwportno', 'clopt',
-    ], { NAME: 'gatewayName' }),
+    ], { NAME: 'gatewayName' }).map((col) => col.key === 'nodename' ? { ...col, badge: true } : col),
     toRows: (items) => items.map((item) => ({ NAME: item.gatewayName, ...pick(item, sectionDefinitions[5].columns.slice(1).map((column) => column.key)) })),
   },
 ]

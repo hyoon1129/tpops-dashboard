@@ -12,6 +12,14 @@ type ConfigTableProps = {
   sortState: SortState | null
 }
 
+const BADGE_COLOR_COUNT = 6
+
+function badgeColorIndex(value: string): number {
+  let hash = 0
+  for (let i = 0; i < value.length; i++) hash = (hash * 31 + value.charCodeAt(i)) >>> 0
+  return hash % BADGE_COLOR_COUNT
+}
+
 export function ConfigTable({
   currentDefinition,
   currentState,
@@ -37,18 +45,22 @@ export function ConfigTable({
           <tr>
             {currentDefinition.columns.map((column) => (
               <th key={column.key}>
-                <button
-                  type="button"
-                  className="sort-button"
-                  onClick={() => onSort(column)}
-                >
-                  <span>{column.label}</span>
-                  <span aria-hidden="true" className="sort-mark">
-                    {sortState?.section === selectedSection && sortState.key === column.sortKey
-                      ? sortState.direction === 'asc' ? '↑' : '↓'
-                      : '↕'}
-                  </span>
-                </button>
+                {column.sortable === false ? (
+                  <span className="sort-button">{column.label}</span>
+                ) : (
+                  <button
+                    type="button"
+                    className="sort-button"
+                    onClick={() => onSort(column)}
+                  >
+                    <span>{column.label}</span>
+                    <span aria-hidden="true" className="sort-mark">
+                      {sortState?.section === selectedSection && sortState.key === column.sortKey
+                        ? sortState.direction === 'asc' ? '↑' : '↓'
+                        : '↕'}
+                    </span>
+                  </button>
+                )}
               </th>
             ))}
           </tr>
@@ -58,7 +70,13 @@ export function ConfigTable({
             <tr key={`${String(row[currentDefinition.columns[0].key])}-${rowIndex}`}>
               {currentDefinition.columns.map((column, columnIndex) => (
                 <td key={column.key}>
-                  {columnIndex === 0
+                  {column.badge
+                    ? row[column.key]
+                      ? <span className="db-badge" data-color={badgeColorIndex(String(row[column.key]))}>{String(row[column.key])}</span>
+                      : <span className="cell-null">-</span>
+                    : row[column.key] == null || row[column.key] === ''
+                    ? <span className="cell-null">-</span>
+                    : columnIndex === 0
                     ? <strong>{highlightedText(row[column.key], sectionKeyword)}</strong>
                     : highlightedText(row[column.key], sectionKeyword)}
                 </td>

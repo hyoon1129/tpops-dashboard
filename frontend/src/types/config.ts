@@ -19,6 +19,8 @@ export type Column = {
   key: string
   label: string
   sortKey: string
+  badge?: boolean
+  sortable?: boolean
 }
 
 export type TableRow = Record<string, TableValue>
