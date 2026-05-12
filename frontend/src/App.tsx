@@ -13,8 +13,6 @@ function App() {
   const [showTop, setShowTop] = useState(false)
   const [sectionCardsCompact, setSectionCardsCompact] = useState(false)
   const sectionCardsCompactRef = useRef(false)
-  const sectionCardsRef = useRef<HTMLElement>(null)
-  const tablePanelRef = useRef<HTMLElement>(null)
   const tableHeadingDescription = dashboard.activeView === '구성 트리'
     ? 'NODE → SVRGROUP → SERVER → SERVICE 연결 구조'
     : dashboard.isGlobalSearch
@@ -39,20 +37,7 @@ function App() {
 
   const handleSectionSelect = (section: Parameters<typeof dashboard.selectSection>[0]) => {
     dashboard.selectSection(section)
-
-    requestAnimationFrame(() => {
-      const panel = tablePanelRef.current
-      if (!panel) {
-        return
-      }
-
-      const cardHeight = sectionCardsRef.current?.getBoundingClientRect().height ?? 0
-      const panelTop = panel.getBoundingClientRect().top + window.scrollY
-      window.scrollTo({
-        top: Math.max(panelTop - cardHeight - 12, 0),
-        behavior: 'smooth',
-      })
-    })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   return (
@@ -86,7 +71,6 @@ function App() {
             compact={sectionCardsCompact}
             isGlobalSearch={dashboard.isGlobalSearch}
             onSectionSelect={handleSectionSelect}
-            ref={sectionCardsRef}
             sections={dashboard.sections}
             selectedSection={dashboard.selectedSection}
           />
@@ -94,7 +78,6 @@ function App() {
 
         <section
           className={`panel table-panel${dashboard.activeView === '구성 트리' ? ' relationship-panel' : ''}`}
-          ref={tablePanelRef}
         >
           <div className="panel-header table-heading">
             <div>

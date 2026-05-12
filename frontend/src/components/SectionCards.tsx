@@ -1,4 +1,3 @@
-import { forwardRef } from 'react'
 import { sectionDefinitions } from '../constants/dashboard'
 import type { SectionKey, SectionState } from '../types/config'
 
@@ -10,18 +9,17 @@ type SectionCardsProps = {
   selectedSection: SectionKey
 }
 
-export const SectionCards = forwardRef<HTMLElement, SectionCardsProps>(function SectionCards({
+export function SectionCards({
   compact,
   isGlobalSearch,
   onSectionSelect,
   sections,
   selectedSection,
-}, ref) {
+}: SectionCardsProps) {
   return (
     <section
       className={compact ? 'section-card-grid compact' : 'section-card-grid'}
       aria-label="설정 섹션 요약"
-      ref={ref}
     >
       {sectionDefinitions.map((section) => (
         <button
@@ -40,4 +38,4 @@ export const SectionCards = forwardRef<HTMLElement, SectionCardsProps>(function 
       ))}
     </section>
   )
-})
+}
