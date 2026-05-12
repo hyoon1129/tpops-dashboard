@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react'
 import { navItems } from '../constants/dashboard'
 import type { DashboardView } from '../types/config'
 
@@ -6,6 +7,25 @@ type SidebarProps = {
   collapsed: boolean
   onViewChange: (view: DashboardView) => void
   onCollapsedChange: (collapsed: boolean) => void
+}
+
+const NAV_ICONS: Record<string, ReactElement> = {
+  '설정 목록': (
+    <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false">
+      <rect x="3" y="3" width="14" height="14" rx="3.5" stroke="currentColor" strokeWidth="1.6" />
+      <line x1="6.5" y1="7.5" x2="13.5" y2="7.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <line x1="6.5" y1="10.5" x2="13.5" y2="10.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <line x1="6.5" y1="13.5" x2="11" y2="13.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  ),
+  '구성 트리': (
+    <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false">
+      <rect x="7.5" y="2" width="5" height="4" rx="2" stroke="currentColor" strokeWidth="1.6" />
+      <rect x="1.5" y="14" width="5" height="4" rx="2" stroke="currentColor" strokeWidth="1.6" />
+      <rect x="13.5" y="14" width="5" height="4" rx="2" stroke="currentColor" strokeWidth="1.6" />
+      <path d="M10 6.5V9.5M10 9.5H4M10 9.5H16M4 9.5V13.5M16 9.5V13.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  ),
 }
 
 export function Sidebar({ activeView, collapsed, onViewChange, onCollapsedChange }: SidebarProps) {
@@ -34,7 +54,9 @@ export function Sidebar({ activeView, collapsed, onViewChange, onCollapsedChange
             type="button"
             className={activeView === item.label ? 'active' : ''}
             onClick={() => onViewChange(item.label as DashboardView)}
+            title={collapsed ? item.label : undefined}
           >
+            {NAV_ICONS[item.label]}
             <span>{item.label}</span>
           </button>
         ))}
