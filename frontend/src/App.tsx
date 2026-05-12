@@ -29,7 +29,7 @@ function App() {
           servers={dashboard.servers}
         />
 
-        {dashboard.activeView !== '구성 트리' ? (
+        {dashboard.activeView !== '구성 트리' && !dashboard.isGlobalSearch ? (
           <SectionCards
             isGlobalSearch={dashboard.isGlobalSearch}
             onSectionSelect={dashboard.selectSection}
