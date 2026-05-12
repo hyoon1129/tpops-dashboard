@@ -153,6 +153,7 @@
 
 .workspace {
   min-width: 0;
+  overflow-x: clip;
   padding: 30px;
 }
 
@@ -233,10 +234,38 @@
 }
 
 .section-card-grid {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 12px;
-  margin-bottom: 12px;
+  overflow-x: visible;
+  margin: 0 -1px 12px;
+  padding: 0 1px;
+  background: #08090a;
+  scrollbar-color: #3e3e44 #0f1011;
+  scrollbar-width: thin;
+  transition: gap 180ms ease, padding 180ms ease, margin 180ms ease, box-shadow 180ms ease;
+}
+
+.section-card-grid::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -12px;
+  height: 12px;
+  background: #08090a;
+  pointer-events: none;
+}
+
+.section-card-grid.compact {
+  gap: 8px;
+  margin: 0 -12px 10px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #23252a;
+  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.25);
 }
 
 .panel {
@@ -254,6 +283,7 @@
   color: #f7f8f8;
   text-align: left;
   cursor: pointer;
+  transition: min-height 180ms ease, border-radius 180ms ease, padding 180ms ease, background 180ms ease;
 }
 
 .section-card span {
@@ -274,6 +304,23 @@
   font-weight: 650;
   line-height: 1;
   font-variant-numeric: tabular-nums;
+  transition: margin 180ms ease, font-size 180ms ease;
+}
+
+.section-card-grid.compact .section-card {
+  min-height: 42px;
+  border-radius: 8px;
+  padding: 9px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.section-card-grid.compact .section-card strong {
+  margin-top: 0;
+  font-size: 14px;
+  font-weight: 750;
 }
 
 .section-card.active {
@@ -314,6 +361,7 @@
 
 .table-panel {
   position: relative;
+  overflow: visible;
   margin-bottom: 30px;
 }
 
@@ -373,9 +421,65 @@
   font-size: 13px;
 }
 
+.table-shell {
+  position: relative;
+}
+
+.sticky-table-header {
+  position: sticky;
+  top: 61px;
+  z-index: 6;
+  height: 44px;
+  overflow: hidden;
+  border-bottom: 1px solid #23252a;
+  background: #141516;
+}
+
+.sticky-table-header-pinned {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  height: 44px;
+  border-right: 1px solid #23252a;
+  background: #141516;
+  padding: 0 18px;
+  color: #8a8f98;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.sticky-table-header-scroll {
+  overflow: hidden;
+  height: 44px;
+}
+
+.sticky-table-header-inner {
+  display: grid;
+  min-width: max-content;
+  height: 44px;
+  will-change: transform;
+}
+
+.sticky-table-header-cell {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding: 0 18px;
+  color: #8a8f98;
+  background: #141516;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
 .table-scroll {
-  max-height: calc(100vh - 286px);
-  overflow: auto;
+  max-height: none;
+  overflow-x: auto;
+  overflow-y: clip;
   scrollbar-color: #3e3e44 #0f1011;
   scrollbar-width: thin;
 }
@@ -998,13 +1102,23 @@ td {
 }
 
 th {
-  position: sticky;
-  top: 0;
-  z-index: 1;
   color: #8a8f98;
   background: #141516;
   font-size: 12px;
   font-weight: 600;
+}
+
+.table-scroll thead th {
+  height: 0;
+  border: 0;
+  padding-block: 0;
+  line-height: 0;
+}
+
+.native-header-label {
+  display: block;
+  height: 0;
+  overflow: hidden;
 }
 
 .sort-button {
@@ -1107,8 +1221,16 @@ mark {
     width: 100%;
   }
 
-  .side-nav,
-  .section-card-grid {
+  .side-nav {
     grid-template-columns: 1fr;
+  }
+
+  .section-card-grid {
+    display: flex;
+    overflow-x: auto;
+  }
+
+  .section-card {
+    min-width: 112px;
   }
 }

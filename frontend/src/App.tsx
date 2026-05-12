@@ -1,5 +1,5 @@
 import './App.css'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { ConfigTable } from './components/ConfigTable'
 import { RelationshipMap } from './components/RelationshipMap'
 import { SearchResults } from './components/SearchResults'
@@ -11,9 +11,24 @@ import { useConfigDashboard } from './hooks/useConfigDashboard'
 function App() {
   const dashboard = useConfigDashboard()
   const [showTop, setShowTop] = useState(false)
+  const [sectionCardsCompact, setSectionCardsCompact] = useState(false)
+  const sectionCardsCompactRef = useRef(false)
+  const currentSectionSummary = dashboard.currentState.loading && dashboard.currentState.total === 0
+    ? `${dashboard.currentDefinition.label} 섹션 · 불러오는 중`
+    : `${dashboard.currentDefinition.label} 섹션 · 현재 ${dashboard.filteredRows.length}건 / 전체 ${dashboard.currentState.total}건`
 
   useEffect(() => {
-    const onScroll = () => setShowTop(window.scrollY > 400)
+    const onScroll = () => {
+      setShowTop(window.scrollY > 400)
+      const shouldCompact = sectionCardsCompactRef.current
+        ? window.scrollY > 80
+        : window.scrollY > 220
+      if (shouldCompact !== sectionCardsCompactRef.current) {
+        sectionCardsCompactRef.current = shouldCompact
+        setSectionCardsCompact(shouldCompact)
+      }
+    }
+    onScroll()
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
@@ -39,6 +54,7 @@ function App() {
 
         {dashboard.activeView !== '구성 트리' && !dashboard.isGlobalSearch ? (
           <SectionCards
+            compact={sectionCardsCompact}
             isGlobalSearch={dashboard.isGlobalSearch}
             onSectionSelect={dashboard.selectSection}
             sections={dashboard.sections}
@@ -59,7 +75,7 @@ function App() {
                   ? 'NODE → SVRGROUP → SERVER → SERVICE 연결 구조'
                   : dashboard.isGlobalSearch
                   ? `전체 섹션 · 검색 결과 ${dashboard.globalSearchRowTotal}건`
-                  : `${dashboard.currentDefinition.label} 섹션 · 총 ${dashboard.currentState.total}건 · 표시 ${dashboard.filteredRows.length}건`}
+                  : currentSectionSummary}
               </p>
             </div>
             {!dashboard.isGlobalSearch && dashboard.activeView !== '구성 트리' ? (

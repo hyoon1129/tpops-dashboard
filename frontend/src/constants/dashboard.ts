@@ -136,7 +136,7 @@ export const sectionDefinitions: SectionDefinition[] = [
     endpoint: 'server-configs',
     columns: [
       ...columns(['NAME', 'svgname'], { NAME: 'serverName' }),
-      { key: 'dbInfo', label: 'DB', sortKey: 'dbInfo', badge: true, sortable: false },
+      { key: 'dbInfo', label: 'DB', sortKey: 'dbInfo', badge: true },
       ...columns([
         'svrtype', 'minValue', 'maxValue', 'target', 'schedule',
         'maxqcount', 'cpc', 'asqcount', 'restart', 'maxrstart', 'gperiod', 'clopt',

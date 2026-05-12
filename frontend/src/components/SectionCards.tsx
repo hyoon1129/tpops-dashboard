@@ -2,6 +2,7 @@ import { sectionDefinitions } from '../constants/dashboard'
 import type { SectionKey, SectionState } from '../types/config'
 
 type SectionCardsProps = {
+  compact: boolean
   isGlobalSearch: boolean
   onSectionSelect: (section: SectionKey) => void
   sections: Record<SectionKey, SectionState>
@@ -9,13 +10,14 @@ type SectionCardsProps = {
 }
 
 export function SectionCards({
+  compact,
   isGlobalSearch,
   onSectionSelect,
   sections,
   selectedSection,
 }: SectionCardsProps) {
   return (
-    <section className="section-card-grid" aria-label="설정 섹션 요약">
+    <section className={compact ? 'section-card-grid compact' : 'section-card-grid'} aria-label="설정 섹션 요약">
       {sectionDefinitions.map((section) => (
         <button
           key={section.label}
@@ -24,7 +26,11 @@ export function SectionCards({
           onClick={() => onSectionSelect(section.label)}
         >
           <span>{section.label}</span>
-          <strong>{sections[section.label].total}</strong>
+          <strong>
+            {sections[section.label].loading && sections[section.label].total === 0
+              ? '...'
+              : sections[section.label].total}
+          </strong>
         </button>
       ))}
     </section>
