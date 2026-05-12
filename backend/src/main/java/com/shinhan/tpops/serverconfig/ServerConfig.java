@@ -54,6 +54,9 @@ public class ServerConfig {
 	@Column(columnDefinition = "TEXT")
 	private String clopt;
 
+	@Column(name = "db_info", length = 100)
+	private String dbInfo;
+
 	@Column(name = "min_value")
 	private Integer minValue;
 
@@ -95,6 +98,7 @@ public class ServerConfig {
 		this.svgname = ConfigValues.stringValue(values, "SVGNAME");
 		this.svrtype = ConfigValues.stringValue(values, "SVRTYPE");
 		this.clopt = ConfigValues.stringValue(values, "CLOPT");
+		this.dbInfo = parseDbInfo(this.clopt);
 		this.minValue = ConfigValues.integerValue(values, "MIN");
 		this.maxValue = ConfigValues.integerValue(values, "MAX");
 		this.target = ConfigValues.stringValue(values, "TARGET");
@@ -112,5 +116,16 @@ public class ServerConfig {
 	@PrePersist
 	void prePersist() {
 		this.createdAt = LocalDateTime.now();
+	}
+
+	private static String parseDbInfo(String clopt) {
+		if (clopt == null || clopt.isBlank()) {
+			return null;
+		}
+		// -k DBU01:CORCON1 → CORCON1, -k CORCON1 → CORCON1
+		java.util.regex.Matcher matcher = java.util.regex.Pattern
+			.compile("-k\\s+(?:[^:\\s]+:)?(\\S+)")
+			.matcher(clopt);
+		return matcher.find() ? matcher.group(1) : null;
 	}
 }
