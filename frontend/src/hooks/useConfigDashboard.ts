@@ -22,7 +22,9 @@ import type {
 export const useConfigDashboard = () => {
   const [servers, setServers] = useState<ServerInfo[]>([])
   const [selectedServerId, setSelectedServerId] = useState<number | null>(null)
-  const [activeView, setActiveView] = useState<DashboardView>('설정 조회')
+  const [activeView, setActiveView] = useState<DashboardView>(() =>
+    location.hash === '#tree' ? '구성 트리' : '설정 목록'
+  )
   const [selectedSection, setSelectedSection] = useState<SectionKey>('SERVER')
   const [globalKeyword, setGlobalKeyword] = useState('')
   const [sectionKeyword, setSectionKeyword] = useState('')
@@ -296,7 +298,7 @@ export const useConfigDashboard = () => {
   }, [globalKeyword, selectedServerId])
 
   useEffect(() => {
-    if (selectedServerId === null || activeView !== '구성 관계') {
+    if (selectedServerId === null || activeView !== '구성 트리') {
       return
     }
 
@@ -379,9 +381,6 @@ export const useConfigDashboard = () => {
 
   const handleGlobalKeywordChange = (keyword: string) => {
     setGlobalKeyword(keyword)
-    if (keyword.trim()) {
-      setActiveView('통합 검색')
-    }
     if (!keyword.trim()) {
       setSearchResults([])
       setSearchRowsBySection(initialSearchRows())
@@ -403,19 +402,16 @@ export const useConfigDashboard = () => {
   }
 
   const selectSection = (section: SectionKey) => {
-    setActiveView('설정 조회')
+    setActiveView('설정 목록')
+    location.hash = '#list'
     setSelectedSection(section)
     setGlobalKeyword('')
   }
 
   const selectView = (view: DashboardView) => {
     setActiveView(view)
-    if (view !== '통합 검색') {
-      setGlobalKeyword('')
-    }
-    if (view === '통합 검색') {
-      setSelectedSection('SERVER')
-    }
+    location.hash = view === '구성 트리' ? '#tree' : '#list'
+    setGlobalKeyword('')
   }
 
   return {

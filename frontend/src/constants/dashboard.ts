@@ -12,12 +12,8 @@ export const pageSize = 100
 export const collapsedSearchLimit = 12
 
 export const navItems: NavItem[] = [
-  { label: '개요' },
-  { label: '설정 조회' },
-  { label: '구성 관계' },
-  { label: '업무 매핑' },
-  { label: '통합 검색' },
-  { label: '관리 설정' },
+  { label: '설정 목록' },
+  { label: '구성 트리' },
 ]
 
 const pick = (item: Record<string, TableValue>, keys: string[]) =>

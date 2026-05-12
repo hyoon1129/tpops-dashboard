@@ -2,7 +2,7 @@ export type NavItem = {
   label: string
 }
 
-export type DashboardView = '개요' | '설정 조회' | '구성 관계' | '업무 매핑' | '통합 검색' | '관리 설정'
+export type DashboardView = '설정 목록' | '구성 트리'
 
 export type ServerInfo = {
   serverId: number
