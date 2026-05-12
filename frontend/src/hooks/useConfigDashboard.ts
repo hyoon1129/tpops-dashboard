@@ -7,7 +7,11 @@ import {
 } from '../constants/dashboard'
 import type {
   Column,
+  DashboardView,
   PageResponse,
+  RelationshipDomain,
+  RelationshipNode,
+  SectionDefinition,
   SearchResult,
   SectionKey,
   ServerInfo,
@@ -18,6 +22,7 @@ import type {
 export const useConfigDashboard = () => {
   const [servers, setServers] = useState<ServerInfo[]>([])
   const [selectedServerId, setSelectedServerId] = useState<number | null>(null)
+  const [activeView, setActiveView] = useState<DashboardView>('설정 조회')
   const [selectedSection, setSelectedSection] = useState<SectionKey>('SERVER')
   const [globalKeyword, setGlobalKeyword] = useState('')
   const [sectionKeyword, setSectionKeyword] = useState('')
@@ -30,6 +35,8 @@ export const useConfigDashboard = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [sortState, setSortState] = useState<SortState | null>(null)
   const [expandedSearchSections, setExpandedSearchSections] = useState<Set<SectionKey>>(() => new Set())
+  const [relationshipRows, setRelationshipRows] = useState(initialSearchRows)
+  const [relationshipLoading, setRelationshipLoading] = useState(false)
 
   const currentDefinition = sectionDefinitions.find((section) => section.label === selectedSection) ?? sectionDefinitions[0]
   const currentState = sections[selectedSection]
@@ -42,6 +49,76 @@ export const useConfigDashboard = () => {
       rows: searchRowsBySection[section.label],
     })).filter((group) => group.rows.length > 0),
   [searchRowsBySection])
+
+  const relationshipTree = useMemo<RelationshipDomain[]>(() => {
+    const domains = relationshipRows.DOMAIN
+    const nodes = relationshipRows.NODE
+    const svrgroups = relationshipRows.SVRGROUP
+    const servers = relationshipRows.SERVER
+    const services = relationshipRows.SERVICE
+    const gateways = relationshipRows.GATEWAY
+
+    const nodeTree = nodes.map<RelationshipNode>((node) => {
+      const nodeName = String(node.NAME ?? '')
+      const nodeSvrgroups = svrgroups
+        .filter((svrgroup) => String(svrgroup.nodename ?? '') === nodeName)
+        .map((svrgroup) => {
+          const svrgroupName = String(svrgroup.NAME ?? '')
+          const groupServers = servers
+            .filter((server) => String(server.svgname ?? '') === svrgroupName)
+            .map((server) => {
+              const serverName = String(server.NAME ?? '')
+              return {
+                server,
+                services: services.filter((service) => String(service.svrname ?? '') === serverName),
+              }
+            })
+          return { svrgroup, servers: groupServers }
+        })
+      return {
+        node,
+        svrgroups: nodeSvrgroups,
+        gateways: gateways.filter((gateway) => String(gateway.nodename ?? '') === nodeName),
+      }
+    })
+
+    return domains.map((domain) => ({
+      domain,
+      nodes: nodeTree,
+    }))
+  }, [relationshipRows])
+
+  const loadAllRows = useCallback(async (
+    definition: SectionDefinition,
+    signal?: AbortSignal,
+  ) => {
+    if (selectedServerId === null) {
+      return []
+    }
+
+    const rows: TableRow[] = []
+    let page = 0
+    let last = false
+
+    while (!last) {
+      const params = new URLSearchParams({
+        page: String(page),
+        size: '200',
+        sort: definition.columns[0].sortKey,
+        direction: 'ASC',
+      })
+      const response = await fetch(`/api/servers/${selectedServerId}/${definition.endpoint}/page?${params.toString()}`, { signal })
+      if (!response.ok) {
+        throw new Error(`${definition.title} 관계 데이터를 불러오지 못했습니다.`)
+      }
+      const data = (await response.json()) as PageResponse
+      rows.push(...definition.toRows(data.content))
+      last = data.last
+      page += 1
+    }
+
+    return rows
+  }, [selectedServerId])
 
   useEffect(() => {
     let ignore = false
@@ -218,6 +295,39 @@ export const useConfigDashboard = () => {
     }
   }, [globalKeyword, selectedServerId])
 
+  useEffect(() => {
+    if (selectedServerId === null || activeView !== '구성 관계') {
+      return
+    }
+
+    const controller = new AbortController()
+
+    async function loadRelationships() {
+      try {
+        setRelationshipLoading(true)
+        const nextRows = initialSearchRows()
+        await Promise.all(sectionDefinitions
+          .map(async (section) => {
+            nextRows[section.label] = await loadAllRows(section, controller.signal)
+          }))
+        setRelationshipRows(nextRows)
+        setError(null)
+      } catch (caught) {
+        if (!controller.signal.aborted) {
+          setError(caught instanceof Error ? caught.message : '알 수 없는 오류가 발생했습니다.')
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setRelationshipLoading(false)
+        }
+      }
+    }
+
+    loadRelationships()
+
+    return () => controller.abort()
+  }, [activeView, loadAllRows, selectedServerId])
+
   const filteredRows = useMemo(() => {
     const normalizedKeyword = sectionKeyword.trim().toLowerCase()
     if (!normalizedKeyword) {
@@ -264,10 +374,14 @@ export const useConfigDashboard = () => {
     setSearchRowsBySection(initialSearchRows())
     setSearchLoading(false)
     setSortState(null)
+    setRelationshipRows(initialSearchRows())
   }
 
   const handleGlobalKeywordChange = (keyword: string) => {
     setGlobalKeyword(keyword)
+    if (keyword.trim()) {
+      setActiveView('통합 검색')
+    }
     if (!keyword.trim()) {
       setSearchResults([])
       setSearchRowsBySection(initialSearchRows())
@@ -289,11 +403,23 @@ export const useConfigDashboard = () => {
   }
 
   const selectSection = (section: SectionKey) => {
+    setActiveView('설정 조회')
     setSelectedSection(section)
     setGlobalKeyword('')
   }
 
+  const selectView = (view: DashboardView) => {
+    setActiveView(view)
+    if (view !== '통합 검색') {
+      setGlobalKeyword('')
+    }
+    if (view === '통합 검색') {
+      setSelectedSection('SERVER')
+    }
+  }
+
   return {
+    activeView,
     currentDefinition,
     currentState,
     error,
@@ -307,12 +433,15 @@ export const useConfigDashboard = () => {
     isGlobalSearch,
     loadNextPage,
     loadingServers,
+    relationshipLoading,
+    relationshipTree,
     searchLoading,
     searchResults,
     searchResultsBySection,
     sectionKeyword,
     sections,
     selectSection,
+    selectView,
     selectedSection,
     selectedServer,
     selectedServerId,

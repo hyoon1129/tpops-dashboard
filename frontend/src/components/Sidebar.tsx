@@ -1,11 +1,14 @@
 import { navItems } from '../constants/dashboard'
+import type { DashboardView } from '../types/config'
 
 type SidebarProps = {
+  activeView: DashboardView
   collapsed: boolean
+  onViewChange: (view: DashboardView) => void
   onCollapsedChange: (collapsed: boolean) => void
 }
 
-export function Sidebar({ collapsed, onCollapsedChange }: SidebarProps) {
+export function Sidebar({ activeView, collapsed, onViewChange, onCollapsedChange }: SidebarProps) {
   return (
     <aside className="sidebar" aria-label="대시보드 메뉴">
       <div className="brand">
@@ -26,7 +29,12 @@ export function Sidebar({ collapsed, onCollapsedChange }: SidebarProps) {
 
       <nav className="side-nav">
         {navItems.map((item) => (
-          <button key={item.label} type="button" className={item.active ? 'active' : ''}>
+          <button
+            key={item.label}
+            type="button"
+            className={activeView === item.label ? 'active' : ''}
+            onClick={() => onViewChange(item.label as DashboardView)}
+          >
             <span>{item.label}</span>
           </button>
         ))}

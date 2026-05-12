@@ -1,7 +1,8 @@
 export type NavItem = {
   label: string
-  active?: boolean
 }
+
+export type DashboardView = '개요' | '설정 조회' | '구성 관계' | '업무 매핑' | '통합 검색' | '관리 설정'
 
 export type ServerInfo = {
   serverId: number
@@ -57,4 +58,25 @@ export type SortState = {
   section: SectionKey
   key: string
   direction: 'asc' | 'desc'
+}
+
+export type RelationshipServer = {
+  server: TableRow
+  services: TableRow[]
+}
+
+export type RelationshipGroup = {
+  svrgroup: TableRow
+  servers: RelationshipServer[]
+}
+
+export type RelationshipNode = {
+  node: TableRow
+  svrgroups: RelationshipGroup[]
+  gateways: TableRow[]
+}
+
+export type RelationshipDomain = {
+  domain: TableRow
+  nodes: RelationshipNode[]
 }

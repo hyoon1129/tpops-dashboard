@@ -1,5 +1,6 @@
 import './App.css'
 import { ConfigTable } from './components/ConfigTable'
+import { RelationshipMap } from './components/RelationshipMap'
 import { SearchResults } from './components/SearchResults'
 import { SectionCards } from './components/SectionCards'
 import { Sidebar } from './components/Sidebar'
@@ -12,7 +13,9 @@ function App() {
   return (
     <main className={dashboard.sidebarCollapsed ? 'app-shell sidebar-collapsed' : 'app-shell'}>
       <Sidebar
+        activeView={dashboard.activeView}
         collapsed={dashboard.sidebarCollapsed}
+        onViewChange={dashboard.selectView}
         onCollapsedChange={dashboard.setSidebarCollapsed}
       />
 
@@ -26,24 +29,32 @@ function App() {
           servers={dashboard.servers}
         />
 
-        <SectionCards
-          isGlobalSearch={dashboard.isGlobalSearch}
-          onSectionSelect={dashboard.selectSection}
-          sections={dashboard.sections}
-          selectedSection={dashboard.selectedSection}
-        />
+        {dashboard.activeView !== '구성 관계' ? (
+          <SectionCards
+            isGlobalSearch={dashboard.isGlobalSearch}
+            onSectionSelect={dashboard.selectSection}
+            sections={dashboard.sections}
+            selectedSection={dashboard.selectedSection}
+          />
+        ) : null}
 
-        <section className="panel table-panel">
+        <section className={`panel table-panel${dashboard.activeView === '구성 관계' ? ' relationship-panel' : ''}`}>
           <div className="panel-header table-heading">
             <div>
-              <h2>{dashboard.isGlobalSearch ? '전체 검색 결과' : `${dashboard.currentDefinition.title} 설정`}</h2>
+              <h2>
+                {dashboard.activeView === '구성 관계'
+                  ? '구성 관계'
+                  : dashboard.isGlobalSearch ? '전체 검색 결과' : `${dashboard.currentDefinition.title} 설정`}
+              </h2>
               <p>
-                {dashboard.isGlobalSearch
+                {dashboard.activeView === '구성 관계'
+                  ? 'NODE → SVRGROUP → SERVER → SERVICE 연결 구조'
+                  : dashboard.isGlobalSearch
                   ? `전체 섹션 · 검색 결과 ${dashboard.globalSearchRowTotal}건`
                   : `${dashboard.currentDefinition.label} 섹션 · 총 ${dashboard.currentState.total}건 · 표시 ${dashboard.filteredRows.length}건`}
               </p>
             </div>
-            {!dashboard.isGlobalSearch ? (
+            {!dashboard.isGlobalSearch && dashboard.activeView !== '구성 관계' ? (
               <div className="table-actions">
                 <div className="table-search">
                   <span aria-hidden="true">/</span>
@@ -62,7 +73,14 @@ function App() {
           {dashboard.error ? <div className="empty-state">{dashboard.error}</div> : null}
           {dashboard.loadingServers || dashboard.searchLoading ? <div className="empty-state">데이터를 불러오는 중입니다.</div> : null}
 
-          {!dashboard.error && !dashboard.loadingServers && dashboard.isGlobalSearch ? (
+          {!dashboard.error && !dashboard.loadingServers && dashboard.activeView === '구성 관계' ? (
+            <RelationshipMap
+              loading={dashboard.relationshipLoading}
+              tree={dashboard.relationshipTree}
+            />
+          ) : null}
+
+          {!dashboard.error && !dashboard.loadingServers && dashboard.activeView !== '구성 관계' && dashboard.isGlobalSearch ? (
             <SearchResults
               expandedSections={dashboard.expandedSearchSections}
               groups={dashboard.searchResultsBySection}
@@ -73,7 +91,7 @@ function App() {
             />
           ) : null}
 
-          {!dashboard.error && !dashboard.loadingServers && !dashboard.isGlobalSearch ? (
+          {!dashboard.error && !dashboard.loadingServers && dashboard.activeView !== '구성 관계' && !dashboard.isGlobalSearch ? (
             <ConfigTable
               currentDefinition={dashboard.currentDefinition}
               currentState={dashboard.currentState}
