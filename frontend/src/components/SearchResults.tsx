@@ -16,6 +16,14 @@ type SearchResultsProps = {
   onToggleSection: (section: SectionKey) => void
 }
 
+const BADGE_COLOR_COUNT = 6
+
+function badgeColorIndex(value: string): number {
+  let hash = 0
+  for (let i = 0; i < value.length; i++) hash = (hash * 31 + value.charCodeAt(i)) >>> 0
+  return hash % BADGE_COLOR_COUNT
+}
+
 export function SearchResults({
   expandedSections,
   groups,
@@ -32,11 +40,11 @@ export function SearchResults({
         const hiddenCount = rows.length - visibleRows.length
 
         return (
-          <section className="search-section" key={section.label}>
+          <section className={`search-section search-section-${section.label.toLowerCase()}`} key={section.label}>
             <div className="search-section-header">
               <div>
-                <h3>{section.title}</h3>
-                <p>{section.label} 섹션 · {rows.length}건</p>
+                <span className="search-section-name">{section.label}</span>
+                <p>검색 결과 {rows.length}건</p>
               </div>
               {rows.length > collapsedSearchLimit ? (
                 <button type="button" onClick={() => onToggleSection(section.label)}>
@@ -58,7 +66,13 @@ export function SearchResults({
                     <tr key={`${String(row[section.columns[0].key])}-${rowIndex}`}>
                       {section.columns.map((column, columnIndex) => (
                         <td key={column.key}>
-                          {columnIndex === 0
+                          {column.badge
+                            ? row[column.key]
+                              ? <span className="db-badge" data-color={badgeColorIndex(String(row[column.key]))}>{String(row[column.key])}</span>
+                              : <span className="cell-null">-</span>
+                            : row[column.key] == null || row[column.key] === ''
+                            ? <span className="cell-null">-</span>
+                            : columnIndex === 0
                             ? <strong>{highlightedText(row[column.key], keyword)}</strong>
                             : highlightedText(row[column.key], keyword)}
                         </td>

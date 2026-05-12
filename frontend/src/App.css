@@ -380,12 +380,31 @@
   background: #17181b;
 }
 
-.search-section-header h3 {
+.search-section-name {
+  display: block;
   margin: 0;
-  color: #f7f8f8;
-  font-size: 14px;
-  font-weight: 650;
+  font-size: 13px;
+  font-weight: 750;
+  letter-spacing: 0.4px;
 }
+
+.search-section-domain .search-section-header::before { background: #d8b4fe; }
+.search-section-domain .search-section-name { color: #d8b4fe; }
+
+.search-section-node .search-section-header::before { background: #fde68a; }
+.search-section-node .search-section-name { color: #fde68a; }
+
+.search-section-svrgroup .search-section-header::before { background: #a5f3fc; }
+.search-section-svrgroup .search-section-name { color: #a5f3fc; }
+
+.search-section-server .search-section-header::before { background: #bbf7d0; }
+.search-section-server .search-section-name { color: #bbf7d0; }
+
+.search-section-service .search-section-header::before { background: #fef08a; }
+.search-section-service .search-section-name { color: #fef08a; }
+
+.search-section-gateway .search-section-header::before { background: #fecaca; }
+.search-section-gateway .search-section-name { color: #fecaca; }
 
 .search-section-header p {
   margin: 4px 0 0;
