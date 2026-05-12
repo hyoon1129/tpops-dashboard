@@ -1,4 +1,5 @@
 import './App.css'
+import { useEffect, useState } from 'react'
 import { ConfigTable } from './components/ConfigTable'
 import { RelationshipMap } from './components/RelationshipMap'
 import { SearchResults } from './components/SearchResults'
@@ -9,6 +10,13 @@ import { useConfigDashboard } from './hooks/useConfigDashboard'
 
 function App() {
   const dashboard = useConfigDashboard()
+  const [showTop, setShowTop] = useState(false)
+
+  useEffect(() => {
+    const onScroll = () => setShowTop(window.scrollY > 400)
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
 
   return (
     <main className={dashboard.sidebarCollapsed ? 'app-shell sidebar-collapsed' : 'app-shell'}>
@@ -105,6 +113,18 @@ function App() {
           ) : null}
         </section>
       </section>
+      {showTop && (
+        <button
+          type="button"
+          className="scroll-top-btn"
+          aria-label="맨 위로"
+          onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        >
+          <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+            <path d="M10 15V5M10 5L5 10M10 5L15 10" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+      )}
     </main>
   )
 }

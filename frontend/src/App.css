@@ -10,6 +10,31 @@
   grid-template-columns: 72px minmax(0, 1fr);
 }
 
+.scroll-top-btn {
+  position: fixed;
+  right: 28px;
+  bottom: 28px;
+  z-index: 50;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #34363d;
+  border-radius: 14px;
+  background: #1a1b1e;
+  color: #b4bac4;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+  transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.15s;
+}
+
+.scroll-top-btn:hover {
+  background: #25272d;
+  border-color: #5e6ad2;
+  color: #f7f8f8;
+  transform: translateY(-2px);
+}
+
 .sidebar {
   position: sticky;
   top: 0;
