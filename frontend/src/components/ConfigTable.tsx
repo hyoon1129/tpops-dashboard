@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useCallback, useLayoutEffect, useRef, useState } from 'react'
 import { highlightedText } from '../utils/highlight'
 import type { Column, SectionDefinition, SectionKey, SectionState, SortState, TableRow } from '../types/config'
 
@@ -6,7 +6,6 @@ type ConfigTableProps = {
   currentDefinition: SectionDefinition
   currentState: SectionState
   filteredRows: TableRow[]
-  onLoadNextPage: () => void
   onSort: (column: Column) => void
   sectionKeyword: string
   selectedSection: SectionKey
@@ -53,7 +52,6 @@ export function ConfigTable({
   currentDefinition,
   currentState,
   filteredRows,
-  onLoadNextPage,
   onSort,
   sectionKeyword,
   selectedSection,
@@ -77,17 +75,6 @@ export function ConfigTable({
     setTableWidth(table.getBoundingClientRect().width)
   }, [])
 
-  useEffect(() => {
-    const onScroll = () => {
-      if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 160) {
-        onLoadNextPage()
-      }
-    }
-
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [onLoadNextPage])
-
   useLayoutEffect(() => {
     measureColumns()
 
@@ -104,7 +91,7 @@ export function ConfigTable({
   }, [currentDefinition.columns, filteredRows, measureColumns])
 
   return (
-    <div className="table-shell">
+    <div className={`table-shell table-section-${selectedSection.toLowerCase()}`}>
       <div className="sticky-table-header">
         {currentDefinition.columns[0] ? (
           <div
@@ -186,15 +173,8 @@ export function ConfigTable({
             ))}
           </tbody>
         </table>
-        {currentState.loading ? (
-          <div className="empty-state">
-            {currentState.rows.length === 0 ? '데이터를 불러오는 중입니다.' : '다음 데이터를 불러오는 중입니다.'}
-          </div>
-        ) : null}
+        {currentState.loading ? <div className="empty-state">데이터를 불러오는 중입니다.</div> : null}
         {!currentState.loading && filteredRows.length === 0 ? <div className="empty-state">표시할 데이터가 없습니다.</div> : null}
-        {!currentState.loading && currentState.last && currentState.rows.length > 0 ? (
-          <div className="empty-state">마지막 데이터입니다.</div>
-        ) : null}
       </div>
     </div>
   )

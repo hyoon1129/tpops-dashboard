@@ -13,9 +13,13 @@ function App() {
   const [showTop, setShowTop] = useState(false)
   const [sectionCardsCompact, setSectionCardsCompact] = useState(false)
   const sectionCardsCompactRef = useRef(false)
-  const currentSectionSummary = dashboard.currentState.loading && dashboard.currentState.total === 0
-    ? `${dashboard.currentDefinition.label} 섹션 · 불러오는 중`
-    : `${dashboard.currentDefinition.label} 섹션 · 현재 ${dashboard.filteredRows.length}건 / 전체 ${dashboard.currentState.total}건`
+  const sectionCardsRef = useRef<HTMLElement>(null)
+  const tablePanelRef = useRef<HTMLElement>(null)
+  const tableHeadingDescription = dashboard.activeView === '구성 트리'
+    ? 'NODE → SVRGROUP → SERVER → SERVICE 연결 구조'
+    : dashboard.isGlobalSearch
+    ? `전체 섹션 · 검색 결과 ${dashboard.globalSearchRowTotal}건`
+    : null
 
   useEffect(() => {
     const onScroll = () => {
@@ -33,8 +37,33 @@ function App() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  const handleSectionSelect = (section: Parameters<typeof dashboard.selectSection>[0]) => {
+    dashboard.selectSection(section)
+
+    requestAnimationFrame(() => {
+      const panel = tablePanelRef.current
+      if (!panel) {
+        return
+      }
+
+      const cardHeight = sectionCardsRef.current?.getBoundingClientRect().height ?? 0
+      const panelTop = panel.getBoundingClientRect().top + window.scrollY
+      window.scrollTo({
+        top: Math.max(panelTop - cardHeight - 12, 0),
+        behavior: 'smooth',
+      })
+    })
+  }
+
   return (
-    <main className={dashboard.sidebarCollapsed ? 'app-shell sidebar-collapsed' : 'app-shell'}>
+    <main
+      className={[
+        'app-shell',
+        dashboard.sidebarCollapsed ? 'sidebar-collapsed' : '',
+        dashboard.initialDataLoading && !dashboard.error ? 'is-loading' : '',
+      ].filter(Boolean).join(' ')}
+      aria-busy={dashboard.initialDataLoading && !dashboard.error}
+    >
       <Sidebar
         activeView={dashboard.activeView}
         collapsed={dashboard.sidebarCollapsed}
@@ -56,27 +85,25 @@ function App() {
           <SectionCards
             compact={sectionCardsCompact}
             isGlobalSearch={dashboard.isGlobalSearch}
-            onSectionSelect={dashboard.selectSection}
+            onSectionSelect={handleSectionSelect}
+            ref={sectionCardsRef}
             sections={dashboard.sections}
             selectedSection={dashboard.selectedSection}
           />
         ) : null}
 
-        <section className={`panel table-panel${dashboard.activeView === '구성 트리' ? ' relationship-panel' : ''}`}>
+        <section
+          className={`panel table-panel${dashboard.activeView === '구성 트리' ? ' relationship-panel' : ''}`}
+          ref={tablePanelRef}
+        >
           <div className="panel-header table-heading">
             <div>
               <h2>
                 {dashboard.activeView === '구성 트리'
                   ? '구성 트리'
-                  : dashboard.isGlobalSearch ? '전체 검색 결과' : `${dashboard.currentDefinition.title} 설정`}
+                  : dashboard.isGlobalSearch ? '전체 검색 결과' : `${dashboard.currentDefinition.label} 설정`}
               </h2>
-              <p>
-                {dashboard.activeView === '구성 트리'
-                  ? 'NODE → SVRGROUP → SERVER → SERVICE 연결 구조'
-                  : dashboard.isGlobalSearch
-                  ? `전체 섹션 · 검색 결과 ${dashboard.globalSearchRowTotal}건`
-                  : currentSectionSummary}
-              </p>
+              {tableHeadingDescription ? <p>{tableHeadingDescription}</p> : null}
             </div>
             {!dashboard.isGlobalSearch && dashboard.activeView !== '구성 트리' ? (
               <div className="table-actions">
@@ -120,7 +147,6 @@ function App() {
               currentDefinition={dashboard.currentDefinition}
               currentState={dashboard.currentState}
               filteredRows={dashboard.filteredRows}
-              onLoadNextPage={dashboard.loadNextPage}
               onSort={dashboard.handleSort}
               sectionKeyword={dashboard.sectionKeyword}
               selectedSection={dashboard.selectedSection}
@@ -141,6 +167,18 @@ function App() {
           </svg>
         </button>
       )}
+      {dashboard.initialDataLoading && !dashboard.error ? (
+        <div className="app-loading-overlay">
+          <div className="app-loading-indicator" aria-live="polite" aria-label="데이터를 불러오는 중">
+            <div className="loading-dots" aria-hidden="true">
+              <span />
+              <span />
+              <span />
+            </div>
+            <p>데이터 불러오는 중</p>
+          </div>
+        </div>
+      ) : null}
     </main>
   )
 }

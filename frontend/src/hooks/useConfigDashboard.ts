@@ -2,13 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   initialSearchRows,
   initialSections,
-  pageSize,
   sectionDefinitions,
 } from '../constants/dashboard'
 import type {
   Column,
   DashboardView,
-  PageResponse,
   RelationshipDomain,
   RelationshipNode,
   SectionDefinition,
@@ -17,6 +15,7 @@ import type {
   ServerInfo,
   SortState,
   TableRow,
+  TableValue,
 } from '../types/config'
 
 export const useConfigDashboard = () => {
@@ -29,6 +28,7 @@ export const useConfigDashboard = () => {
   const [globalKeyword, setGlobalKeyword] = useState('')
   const [sectionKeyword, setSectionKeyword] = useState('')
   const [sections, setSections] = useState(initialSections)
+  const [initialDataLoading, setInitialDataLoading] = useState(true)
   const [loadingServers, setLoadingServers] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [searchResults, setSearchResults] = useState<SearchResult[]>([])
@@ -38,7 +38,6 @@ export const useConfigDashboard = () => {
   const [sortState, setSortState] = useState<SortState | null>(null)
   const [expandedSearchSections, setExpandedSearchSections] = useState<Set<SectionKey>>(() => new Set())
   const [relationshipRows, setRelationshipRows] = useState(initialSearchRows)
-  const [relationshipLoading, setRelationshipLoading] = useState(false)
 
   const currentDefinition = sectionDefinitions.find((section) => section.label === selectedSection) ?? sectionDefinitions[0]
   const currentState = sections[selectedSection]
@@ -90,7 +89,7 @@ export const useConfigDashboard = () => {
     }))
   }, [relationshipRows])
 
-  const loadAllRows = useCallback(async (
+  const loadSectionRows = useCallback(async (
     definition: SectionDefinition,
     signal?: AbortSignal,
   ) => {
@@ -98,29 +97,35 @@ export const useConfigDashboard = () => {
       return []
     }
 
-    const rows: TableRow[] = []
-    let page = 0
-    let last = false
+    const response = await fetch(`/api/servers/${selectedServerId}/${definition.endpoint}`, { signal })
+    if (!response.ok) {
+      throw new Error(`${definition.title} 설정을 불러오지 못했습니다.`)
+    }
+    const data = (await response.json()) as Array<Record<string, TableValue>>
 
-    while (!last) {
-      const params = new URLSearchParams({
-        page: String(page),
-        size: '200',
-        sort: definition.columns[0].sortKey,
-        direction: 'ASC',
-      })
-      const response = await fetch(`/api/servers/${selectedServerId}/${definition.endpoint}/page?${params.toString()}`, { signal })
-      if (!response.ok) {
-        throw new Error(`${definition.title} 관계 데이터를 불러오지 못했습니다.`)
-      }
-      const data = (await response.json()) as PageResponse
-      rows.push(...definition.toRows(data.content))
-      last = data.last
-      page += 1
+    return definition.toRows(data)
+  }, [selectedServerId])
+
+  const compareRows = (column: Column, direction: SortState['direction']) => (left: TableRow, right: TableRow) => {
+    const leftValue = left[column.key]
+    const rightValue = right[column.key]
+
+    if (leftValue == null && rightValue == null) {
+      return 0
+    }
+    if (leftValue == null) {
+      return direction === 'asc' ? 1 : -1
+    }
+    if (rightValue == null) {
+      return direction === 'asc' ? -1 : 1
     }
 
-    return rows
-  }, [selectedServerId])
+    const result = typeof leftValue === 'number' && typeof rightValue === 'number'
+      ? leftValue - rightValue
+      : String(leftValue).localeCompare(String(rightValue), 'ko', { numeric: true, sensitivity: 'base' })
+
+    return direction === 'asc' ? result : -result
+  }
 
   useEffect(() => {
     let ignore = false
@@ -137,10 +142,14 @@ export const useConfigDashboard = () => {
           setServers(data)
           setSelectedServerId((serverId) => serverId ?? data[0]?.serverId ?? null)
           setError(data.length === 0 ? '조회할 서버가 없습니다.' : null)
+          if (data.length === 0) {
+            setInitialDataLoading(false)
+          }
         }
       } catch (caught) {
         if (!ignore) {
           setError(caught instanceof Error ? caught.message : '알 수 없는 오류가 발생했습니다.')
+          setInitialDataLoading(false)
         }
       } finally {
         if (!ignore) {
@@ -156,71 +165,61 @@ export const useConfigDashboard = () => {
     }
   }, [])
 
-  const loadSectionPage = useCallback(async (
-    sectionKey: SectionKey,
-    page: number,
-    append: boolean,
-    nextSortState: SortState | null = null,
-  ) => {
-    if (selectedServerId === null) {
-      return
-    }
-
-    const definition = sectionDefinitions.find((section) => section.label === sectionKey)
-    if (!definition) {
-      return
-    }
-
-    setSections((current) => ({
-      ...current,
-      [sectionKey]: { ...current[sectionKey], loading: true },
-    }))
-
-    try {
-      const params = new URLSearchParams({
-        page: String(page),
-        size: String(pageSize),
-      })
-      if (nextSortState?.section === sectionKey) {
-        params.set('sort', nextSortState.key)
-        params.set('direction', nextSortState.direction.toUpperCase())
-      }
-      const response = await fetch(`/api/servers/${selectedServerId}/${definition.endpoint}/page?${params.toString()}`)
-      if (!response.ok) {
-        throw new Error(`${definition.title} 설정을 불러오지 못했습니다.`)
-      }
-      const data = (await response.json()) as PageResponse
-      const rows = definition.toRows(data.content)
-
-      setSections((current) => ({
-        ...current,
-        [sectionKey]: {
-          rows: append ? [...current[sectionKey].rows, ...rows] : rows,
-          total: data.totalElements,
-          page: data.page,
-          last: data.last,
-          loading: false,
-        },
-      }))
-      setError(null)
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : '알 수 없는 오류가 발생했습니다.')
-      setSections((current) => ({
-        ...current,
-        [sectionKey]: { ...current[sectionKey], loading: false },
-      }))
-    }
-  }, [selectedServerId])
-
   useEffect(() => {
     if (selectedServerId === null) {
       return
     }
 
-    sectionDefinitions.forEach((section) => {
-      loadSectionPage(section.label, 0, false)
-    })
-  }, [loadSectionPage, selectedServerId])
+    const controller = new AbortController()
+
+    async function loadSections() {
+      try {
+        setInitialDataLoading(true)
+        setSections((current) =>
+          sectionDefinitions.reduce((next, section) => {
+            next[section.label] = { ...current[section.label], loading: true }
+            return next
+          }, { ...current }),
+        )
+
+        const nextRows = initialSearchRows()
+        const nextSections = initialSections()
+        await Promise.all(sectionDefinitions.map(async (section) => {
+          const rows = await loadSectionRows(section, controller.signal)
+          nextRows[section.label] = rows
+          nextSections[section.label] = {
+            rows,
+            total: rows.length,
+            page: 0,
+            last: true,
+            loading: false,
+          }
+        }))
+
+        setSections(nextSections)
+        setRelationshipRows(nextRows)
+        setError(null)
+      } catch (caught) {
+        if (!controller.signal.aborted) {
+          setError(caught instanceof Error ? caught.message : '알 수 없는 오류가 발생했습니다.')
+          setSections((current) =>
+            sectionDefinitions.reduce((next, section) => {
+              next[section.label] = { ...current[section.label], loading: false }
+              return next
+            }, { ...current }),
+          )
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setInitialDataLoading(false)
+        }
+      }
+    }
+
+    loadSections()
+
+    return () => controller.abort()
+  }, [loadSectionRows, selectedServerId])
 
   useEffect(() => {
     if (selectedServerId === null || !globalKeyword.trim()) {
@@ -251,30 +250,8 @@ export const useConfigDashboard = () => {
             return
           }
 
-          const rows: TableRow[] = []
-          let page = 0
-          let last = false
-
-          while (!last) {
-            const sectionParams = new URLSearchParams({
-              page: String(page),
-              size: '200',
-              sort: section.columns[0].sortKey,
-              direction: 'ASC',
-            })
-            const sectionResponse = await fetch(`/api/servers/${selectedServerId}/${section.endpoint}/page?${sectionParams.toString()}`, {
-              signal: controller.signal,
-            })
-            if (!sectionResponse.ok) {
-              throw new Error(`${section.title} 검색 결과를 불러오지 못했습니다.`)
-            }
-            const data = (await sectionResponse.json()) as PageResponse
-            rows.push(...section.toRows(data.content).filter((row) => matchedNames.has(String(row.NAME ?? ''))))
-            last = data.last
-            page += 1
-          }
-
-          nextSearchRows[section.label] = rows
+          nextSearchRows[section.label] = sections[section.label].rows
+            .filter((row) => matchedNames.has(String(row.NAME ?? '')))
         }))
 
         setSearchResults(results)
@@ -295,40 +272,7 @@ export const useConfigDashboard = () => {
       controller.abort()
       window.clearTimeout(timer)
     }
-  }, [globalKeyword, selectedServerId])
-
-  useEffect(() => {
-    if (selectedServerId === null || activeView !== '구성 트리') {
-      return
-    }
-
-    const controller = new AbortController()
-
-    async function loadRelationships() {
-      try {
-        setRelationshipLoading(true)
-        const nextRows = initialSearchRows()
-        await Promise.all(sectionDefinitions
-          .map(async (section) => {
-            nextRows[section.label] = await loadAllRows(section, controller.signal)
-          }))
-        setRelationshipRows(nextRows)
-        setError(null)
-      } catch (caught) {
-        if (!controller.signal.aborted) {
-          setError(caught instanceof Error ? caught.message : '알 수 없는 오류가 발생했습니다.')
-        }
-      } finally {
-        if (!controller.signal.aborted) {
-          setRelationshipLoading(false)
-        }
-      }
-    }
-
-    loadRelationships()
-
-    return () => controller.abort()
-  }, [activeView, loadAllRows, selectedServerId])
+  }, [globalKeyword, sections, selectedServerId])
 
   const filteredRows = useMemo(() => {
     const normalizedKeyword = sectionKeyword.trim().toLowerCase()
@@ -341,13 +285,6 @@ export const useConfigDashboard = () => {
       ),
     )
   }, [currentDefinition.columns, currentState.rows, sectionKeyword])
-
-  const loadNextPage = () => {
-    if (isGlobalSearch || sectionKeyword.trim() || currentState.loading || currentState.last) {
-      return
-    }
-    loadSectionPage(selectedSection, currentState.page + 1, true, sortState)
-  }
 
   const handleSort = (column: Column) => {
     const nextDirection = sortState?.section === selectedSection && sortState.key === column.sortKey && sortState.direction === 'asc'
@@ -362,9 +299,11 @@ export const useConfigDashboard = () => {
     setSectionKeyword('')
     setSections((current) => ({
       ...current,
-      [selectedSection]: { ...current[selectedSection], rows: [], page: -1, last: false },
+      [selectedSection]: {
+        ...current[selectedSection],
+        rows: [...current[selectedSection].rows].sort(compareRows(column, nextDirection)),
+      },
     }))
-    loadSectionPage(selectedSection, 0, false, nextSortState)
   }
 
   const handleServerChange = (serverId: number) => {
@@ -377,6 +316,7 @@ export const useConfigDashboard = () => {
     setSearchLoading(false)
     setSortState(null)
     setRelationshipRows(initialSearchRows())
+    setInitialDataLoading(true)
   }
 
   const handleGlobalKeywordChange = (keyword: string) => {
@@ -431,9 +371,9 @@ export const useConfigDashboard = () => {
     handleServerChange,
     handleSort,
     isGlobalSearch,
-    loadNextPage,
+    initialDataLoading,
     loadingServers,
-    relationshipLoading,
+    relationshipLoading: false,
     relationshipTree,
     searchLoading,
     searchResults,

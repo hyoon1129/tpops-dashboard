@@ -33,13 +33,6 @@ export type SectionDefinition = {
   toRows: (items: Array<Record<string, TableValue>>) => TableRow[]
 }
 
-export type PageResponse = {
-  content: Array<Record<string, TableValue>>
-  page: number
-  totalElements: number
-  last: boolean
-}
-
 export type SectionState = {
   rows: TableRow[]
   total: number

@@ -8,7 +8,6 @@ import type {
   TableValue,
 } from '../types/config'
 
-export const pageSize = 100
 export const collapsedSearchLimit = 12
 
 export const navItems: NavItem[] = [
