@@ -1,4 +1,5 @@
 .app-shell {
+  position: relative;
   min-height: 100vh;
   display: grid;
   grid-template-columns: 248px minmax(0, 1fr);
@@ -6,8 +7,75 @@
   color: #f7f8f8;
 }
 
+.app-shell.is-loading {
+  min-height: 100vh;
+  overflow: hidden;
+}
+
 .app-shell.sidebar-collapsed {
   grid-template-columns: 72px minmax(0, 1fr);
+}
+
+.app-loading-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: grid;
+  place-items: center;
+  background: rgba(1, 1, 2, 0.72);
+  color: #f7f8f8;
+  padding: 24px;
+  backdrop-filter: blur(3px);
+}
+
+.app-loading-indicator {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+}
+
+.loading-dots {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.loading-dots span {
+  width: 11px;
+  height: 11px;
+  border-radius: 999px;
+  background: #6f79ff;
+  box-shadow: 0 0 22px rgba(111, 121, 255, 0.42);
+  animation: loading-dot-wave 1s ease-in-out infinite;
+}
+
+.loading-dots span:nth-child(2) {
+  animation-delay: 0.14s;
+}
+
+.loading-dots span:nth-child(3) {
+  animation-delay: 0.28s;
+}
+
+.app-loading-indicator p {
+  margin: 0;
+  color: #8a8f98;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+@keyframes loading-dot-wave {
+  0%,
+  80%,
+  100% {
+    opacity: 0.32;
+    transform: translateY(0) scale(0.82);
+  }
+
+  40% {
+    opacity: 1;
+    transform: translateY(-8px) scale(1);
+  }
 }
 
 .scroll-top-btn {
@@ -1101,6 +1169,18 @@ td {
   white-space: nowrap;
 }
 
+.table-section-service th:first-child,
+.table-section-service td:first-child {
+  width: 190px;
+  min-width: 190px;
+  max-width: 190px;
+}
+
+.table-section-service th:not(:first-child),
+.table-section-service td:not(:first-child) {
+  min-width: 220px;
+}
+
 th {
   color: #8a8f98;
   background: #141516;
@@ -1157,16 +1237,16 @@ td:first-child {
   left: 0;
   z-index: 2;
   border-right: 1px solid #23252a;
-  background: #0f1011;
+  background: #15171c;
 }
 
 th:first-child {
   z-index: 3;
-  background: #141516;
+  background: #1a1c22;
 }
 
 tbody tr:hover td:first-child {
-  background: #141516;
+  background: #1c1f26;
 }
 
 td strong {
