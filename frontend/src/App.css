@@ -658,6 +658,7 @@
 }
 
 .map-column-list {
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 8px;
@@ -710,27 +711,47 @@
 }
 
 .map-item.active {
+  position: sticky;
+  top: 46px;
+  z-index: 1;
   border-color: #5e6ad2;
-  background: rgba(94, 106, 210, 0.12);
+  background: #191a28;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
 }
 
-@keyframes map-item-jump {
-  0%   { background: rgba(94, 106, 210, 0.50); border-color: #8b96e8; }
-  100% { background: rgba(94, 106, 210, 0.12); border-color: #5e6ad2; }
+@keyframes map-item-jump-target {
+  0%   { background: #4cc9a0; border-color: #7eeac8; box-shadow: 0 0 24px rgba(76, 201, 160, 0.9), 0 4px 12px rgba(0, 0, 0, 0.5); }
+  25%  { background: #1f4a3a; border-color: #4cc9a0; box-shadow: 0 0 12px rgba(76, 201, 160, 0.4), 0 4px 12px rgba(0, 0, 0, 0.5); }
+  100% { background: #162e27; border-color: #38bd94; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); }
 }
 
-.map-item.active.jumped {
-  animation: map-item-jump 0.8s ease-out forwards;
+@keyframes map-item-jump-ancestor {
+  0%   { background: #242754; border-color: #8b96e8; }
+  100% { background: #191a28; border-color: #5e6ad2; }
+}
+
+.map-item.jump-target {
+  position: sticky;
+  top: 46px;
+  z-index: 1;
+  animation: map-item-jump-target 1.4s ease-out forwards;
+  background: #162e27;
+  border-color: #38bd94;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.map-item.active.jump-ancestor {
+  animation: map-item-jump-ancestor 1s ease-out forwards;
 }
 
 .map-item.inspected {
   border-color: #3d8c5e;
-  background: rgba(52, 120, 80, 0.10);
+  background: #162b20;
 }
 
 .map-item.active.inspected {
   border-color: #5e6ad2;
-  background: rgba(94, 106, 210, 0.18);
+  background: #191a28;
 }
 
 .map-item-main {
@@ -773,17 +794,17 @@
   width: 18px;
   height: 18px;
   flex: 0 0 18px;
-  border: 1px solid #383a42;
+  border: 1.5px solid #4a4d57;
   border-radius: 50%;
   background: transparent;
-  color: #545860;
+  color: #6b7080;
   font: inherit;
   font-size: 11px;
   font-weight: 700;
-  font-style: italic;
+  font-style: normal;
   line-height: 1;
   cursor: pointer;
-  opacity: 0.5;
+  opacity: 0.7;
   transition: opacity 0.12s, color 0.12s, border-color 0.12s;
 }
 

@@ -25,6 +25,7 @@ type SearchHit = {
   nodeKey: string | null
   groupKey: string | null
   serverKey: string | null
+  targetKey: string
 }
 
 type RelationshipMapProps = {
@@ -62,6 +63,9 @@ export function RelationshipMap({ loading, tree }: RelationshipMapProps) {
   const [searchQuery, setSearchQuery] = useState('')
   const [searchFocused, setSearchFocused] = useState(false)
   const [jumpId, setJumpId] = useState(0)
+  const [jumpTargetKey, setJumpTargetKey] = useState<string | null>(null)
+  const [jumpAncestorKeys, setJumpAncestorKeys] = useState<Set<string>>(new Set())
+  const jumpRafRef = useRef<number | null>(null)
 
   const activeDomainKey = tree.some((d) => itemKey('DOMAIN', d.domain) === selectedDomainKey)
     ? selectedDomainKey
@@ -91,7 +95,7 @@ export function RelationshipMap({ loading, tree }: RelationshipMapProps) {
       const domainName = rowName(domainEntry.domain)
 
       if (domainName.toLowerCase().includes(q)) {
-        hits.push({ label: domainName, section: 'DOMAIN', path: [domainName], domainKey, nodeKey: null, groupKey: null, serverKey: null })
+        hits.push({ label: domainName, section: 'DOMAIN', path: [domainName], domainKey, nodeKey: null, groupKey: null, serverKey: null, targetKey: domainKey })
       }
 
       for (const nodeEntry of domainEntry.nodes) {
@@ -99,7 +103,7 @@ export function RelationshipMap({ loading, tree }: RelationshipMapProps) {
         const nodeName = rowName(nodeEntry.node)
 
         if (nodeName.toLowerCase().includes(q)) {
-          hits.push({ label: nodeName, section: 'NODE', path: [domainName, nodeName], domainKey, nodeKey, groupKey: null, serverKey: null })
+          hits.push({ label: nodeName, section: 'NODE', path: [domainName, nodeName], domainKey, nodeKey, groupKey: null, serverKey: null, targetKey: nodeKey })
         }
 
         for (const groupEntry of nodeEntry.svrgroups) {
@@ -107,7 +111,7 @@ export function RelationshipMap({ loading, tree }: RelationshipMapProps) {
           const groupName = rowName(groupEntry.svrgroup)
 
           if (groupName.toLowerCase().includes(q)) {
-            hits.push({ label: groupName, section: 'SVRGROUP', path: [domainName, nodeName, groupName], domainKey, nodeKey, groupKey, serverKey: null })
+            hits.push({ label: groupName, section: 'SVRGROUP', path: [domainName, nodeName, groupName], domainKey, nodeKey, groupKey, serverKey: null, targetKey: groupKey })
           }
 
           for (const serverEntry of groupEntry.servers) {
@@ -115,13 +119,13 @@ export function RelationshipMap({ loading, tree }: RelationshipMapProps) {
             const serverName = rowName(serverEntry.server)
 
             if (serverName.toLowerCase().includes(q)) {
-              hits.push({ label: serverName, section: 'SERVER', path: [domainName, nodeName, groupName, serverName], domainKey, nodeKey, groupKey, serverKey })
+              hits.push({ label: serverName, section: 'SERVER', path: [domainName, nodeName, groupName, serverName], domainKey, nodeKey, groupKey, serverKey, targetKey: serverKey })
             }
 
             for (const service of serverEntry.services) {
               const serviceName = rowName(service)
               if (serviceName.toLowerCase().includes(q)) {
-                hits.push({ label: serviceName, section: 'SERVICE', path: [domainName, nodeName, groupName, serverName, serviceName], domainKey, nodeKey, groupKey, serverKey })
+                hits.push({ label: serviceName, section: 'SERVICE', path: [domainName, nodeName, groupName, serverName, serviceName], domainKey, nodeKey, groupKey, serverKey, targetKey: itemKey('SERVICE', service) })
               }
             }
           }
@@ -154,7 +158,29 @@ export function RelationshipMap({ loading, tree }: RelationshipMapProps) {
 
   useEffect(() => () => { if (closeTimerRef.current) clearTimeout(closeTimerRef.current) }, [])
 
+  useEffect(() => {
+    if (jumpId === 0) return
+    if (jumpRafRef.current) cancelAnimationFrame(jumpRafRef.current)
+    jumpRafRef.current = requestAnimationFrame(() => {
+      const candidates = Array.from(document.querySelectorAll<HTMLElement>('.map-columns .map-item.active, .map-columns .map-item.jump-target'))
+      const lowestEl = candidates.reduce<HTMLElement | null>((lowest, el) => {
+        if (!lowest) return el
+        return el.getBoundingClientRect().top > lowest.getBoundingClientRect().top ? el : lowest
+      }, null)
+      if (lowestEl) lowestEl.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    })
+    return () => { if (jumpRafRef.current) cancelAnimationFrame(jumpRafRef.current) }
+  }, [jumpId])
+
   const jumpToHit = (hit: SearchHit) => {
+    const ancestors = new Set<string>()
+    if (hit.section !== 'DOMAIN') ancestors.add(hit.domainKey)
+    if (hit.section !== 'NODE' && hit.nodeKey) ancestors.add(hit.nodeKey)
+    if (hit.section !== 'SVRGROUP' && hit.groupKey) ancestors.add(hit.groupKey)
+    if (hit.section !== 'SERVER' && hit.serverKey) ancestors.add(hit.serverKey)
+
+    setJumpTargetKey(hit.targetKey)
+    setJumpAncestorKeys(ancestors)
     setSelectedDomainKey(hit.domainKey)
     setSelectedNodeKey(hit.nodeKey)
     setSelectedGroupKey(hit.groupKey)
@@ -179,6 +205,8 @@ export function RelationshipMap({ loading, tree }: RelationshipMapProps) {
     setSelectedNodeKey(null)
     setSelectedGroupKey(null)
     setSelectedServerKey(null)
+    setJumpTargetKey(null)
+    setJumpAncestorKeys(new Set())
   }
 
   const selectNode = (node: RelationshipNode) => {
@@ -186,17 +214,23 @@ export function RelationshipMap({ loading, tree }: RelationshipMapProps) {
     setSelectedNodeKey(key === selectedNodeKey ? null : key)
     setSelectedGroupKey(null)
     setSelectedServerKey(null)
+    setJumpTargetKey(null)
+    setJumpAncestorKeys(new Set())
   }
 
   const selectGroup = (group: RelationshipGroup) => {
     const key = itemKey('SVRGROUP', group.svrgroup)
     setSelectedGroupKey(key === selectedGroupKey ? null : key)
     setSelectedServerKey(null)
+    setJumpTargetKey(null)
+    setJumpAncestorKeys(new Set())
   }
 
   const selectServer = (server: RelationshipServer) => {
     const key = itemKey('SERVER', server.server)
     setSelectedServerKey(key === selectedServerKey ? null : key)
+    setJumpTargetKey(null)
+    setJumpAncestorKeys(new Set())
   }
 
   // ⓘ 버튼 = inspector 오픈 (토글)
@@ -258,113 +292,136 @@ export function RelationshipMap({ loading, tree }: RelationshipMapProps) {
       {/* 브랜치맵 */}
       <div className="map-columns" aria-label="구성 관계 브랜치맵">
         <MapColumn title="DOMAIN" count={domains.length}>
-          {domains.map((domain) => (
-            <MapButton
-              active={itemKey('DOMAIN', domain.domain) === activeDomainKey}
-              inspected={inspectedKey === itemKey('DOMAIN', domain.domain)}
-              jumpId={jumpId}
-              count={`${domain.nodes.length} NODE`}
-              key={rowName(domain.domain)}
-              label={rowName(domain.domain)}
-              onClick={() => selectDomain(domain)}
-              onInspect={() =>
-                openInspector('DOMAIN', domain.domain, [rowName(domain.domain)])
-              }
-            />
-          ))}
+          {domains.map((domain) => {
+            const key = itemKey('DOMAIN', domain.domain)
+            return (
+              <MapButton
+                active={key === activeDomainKey}
+                inspected={inspectedKey === key}
+                isJumpTarget={jumpTargetKey === key}
+                isJumpAncestor={jumpAncestorKeys.has(key)}
+                jumpId={jumpId}
+                count={`${domain.nodes.length} NODE`}
+                key={rowName(domain.domain)}
+                label={rowName(domain.domain)}
+                onClick={() => selectDomain(domain)}
+                onInspect={() => openInspector('DOMAIN', domain.domain, [rowName(domain.domain)])}
+              />
+            )
+          })}
         </MapColumn>
 
         <MapColumn title="NODE" count={nodes.length} muted={!selectedDomain}>
-          {nodes.map((node) => (
-            <MapButton
-              active={itemKey('NODE', node.node) === selectedNodeKey}
-              inspected={inspectedKey === itemKey('NODE', node.node)}
-              jumpId={jumpId}
-              count={`${node.svrgroups.length} SVG`}
-              key={rowName(node.node)}
-              label={rowName(node.node)}
-              onClick={() => selectNode(node)}
-              onInspect={() =>
-                openInspector('NODE', node.node, [
-                  rowName(selectedDomain?.domain),
-                  rowName(node.node),
-                ])
-              }
-            />
-          ))}
+          {nodes.map((node) => {
+            const key = itemKey('NODE', node.node)
+            return (
+              <MapButton
+                active={key === selectedNodeKey}
+                inspected={inspectedKey === key}
+                isJumpTarget={jumpTargetKey === key}
+                isJumpAncestor={jumpAncestorKeys.has(key)}
+                jumpId={jumpId}
+                count={`${node.svrgroups.length} SVG`}
+                key={rowName(node.node)}
+                label={rowName(node.node)}
+                onClick={() => selectNode(node)}
+                onInspect={() =>
+                  openInspector('NODE', node.node, [
+                    rowName(selectedDomain?.domain),
+                    rowName(node.node),
+                  ])
+                }
+              />
+            )
+          })}
         </MapColumn>
 
         <MapColumn title="SVG" count={groups.length} muted={!selectedNode}>
-          {groups.map((group) => (
-            <MapButton
-              active={itemKey('SVRGROUP', group.svrgroup) === selectedGroupKey}
-              inspected={inspectedKey === itemKey('SVRGROUP', group.svrgroup)}
-              jumpId={jumpId}
-              count={`${group.servers.length} SERVER`}
-              key={rowName(group.svrgroup)}
-              label={rowName(group.svrgroup)}
-              onClick={() => selectGroup(group)}
-              onInspect={() =>
-                openInspector('SVRGROUP', group.svrgroup, [
-                  rowName(selectedDomain?.domain),
-                  rowName(selectedNode?.node),
-                  rowName(group.svrgroup),
-                ])
-              }
-            />
-          ))}
+          {groups.map((group) => {
+            const key = itemKey('SVRGROUP', group.svrgroup)
+            return (
+              <MapButton
+                active={key === selectedGroupKey}
+                inspected={inspectedKey === key}
+                isJumpTarget={jumpTargetKey === key}
+                isJumpAncestor={jumpAncestorKeys.has(key)}
+                jumpId={jumpId}
+                count={`${group.servers.length} SERVER`}
+                key={rowName(group.svrgroup)}
+                label={rowName(group.svrgroup)}
+                onClick={() => selectGroup(group)}
+                onInspect={() =>
+                  openInspector('SVRGROUP', group.svrgroup, [
+                    rowName(selectedDomain?.domain),
+                    rowName(selectedNode?.node),
+                    rowName(group.svrgroup),
+                  ])
+                }
+              />
+            )
+          })}
         </MapColumn>
 
         <MapColumn title="SERVER" count={servers.length} muted={!selectedGroup}>
-          {servers.map((server) => (
-            <MapButton
-              active={itemKey('SERVER', server.server) === selectedServerKey}
-              inspected={inspectedKey === itemKey('SERVER', server.server)}
-              jumpId={jumpId}
-              count={`${server.services.length} SERVICE`}
-              key={rowName(server.server)}
-              label={rowName(server.server)}
-              onClick={() => selectServer(server)}
-              onInspect={() =>
-                openInspector('SERVER', server.server, [
-                  rowName(selectedDomain?.domain),
-                  rowName(selectedNode?.node),
-                  rowName(selectedGroup?.svrgroup),
-                  rowName(server.server),
-                ])
-              }
-            />
-          ))}
+          {servers.map((server) => {
+            const key = itemKey('SERVER', server.server)
+            return (
+              <MapButton
+                active={key === selectedServerKey}
+                inspected={inspectedKey === key}
+                isJumpTarget={jumpTargetKey === key}
+                isJumpAncestor={jumpAncestorKeys.has(key)}
+                jumpId={jumpId}
+                count={`${server.services.length} SERVICE`}
+                key={rowName(server.server)}
+                label={rowName(server.server)}
+                onClick={() => selectServer(server)}
+                onInspect={() =>
+                  openInspector('SERVER', server.server, [
+                    rowName(selectedDomain?.domain),
+                    rowName(selectedNode?.node),
+                    rowName(selectedGroup?.svrgroup),
+                    rowName(server.server),
+                  ])
+                }
+              />
+            )
+          })}
         </MapColumn>
 
         <MapColumn title="SERVICE" count={services.length} muted={!selectedServer}>
-          {services.map((service) => (
-            <MapButton
-              active={false}
-              inspected={inspectedKey === itemKey('SERVICE', service)}
-              jumpId={jumpId}
-              key={rowName(service)}
-              label={rowName(service)}
-              onClick={() =>
-                openInspector('SERVICE', service, [
-                  rowName(selectedDomain?.domain),
-                  rowName(selectedNode?.node),
-                  rowName(selectedGroup?.svrgroup),
-                  rowName(selectedServer?.server),
-                  rowName(service),
-                ])
-              }
-              onInspect={() =>
-                openInspector('SERVICE', service, [
-                  rowName(selectedDomain?.domain),
-                  rowName(selectedNode?.node),
-                  rowName(selectedGroup?.svrgroup),
-                  rowName(selectedServer?.server),
-                  rowName(service),
-                ])
-              }
-            />
-          ))}
+          {services.map((service) => {
+            const key = itemKey('SERVICE', service)
+            return (
+              <MapButton
+                active={false}
+                inspected={inspectedKey === key}
+                isJumpTarget={jumpTargetKey === key}
+                isJumpAncestor={false}
+                jumpId={jumpId}
+                key={rowName(service)}
+                label={rowName(service)}
+                onClick={() =>
+                  openInspector('SERVICE', service, [
+                    rowName(selectedDomain?.domain),
+                    rowName(selectedNode?.node),
+                    rowName(selectedGroup?.svrgroup),
+                    rowName(selectedServer?.server),
+                    rowName(service),
+                  ])
+                }
+                onInspect={() =>
+                  openInspector('SERVICE', service, [
+                    rowName(selectedDomain?.domain),
+                    rowName(selectedNode?.node),
+                    rowName(selectedGroup?.svrgroup),
+                    rowName(selectedServer?.server),
+                    rowName(service),
+                  ])
+                }
+              />
+            )
+          })}
         </MapColumn>
       </div>
 
@@ -420,7 +477,7 @@ function MapColumn({ children, count, muted = false, title }: MapColumnProps) {
         <span>{count}</span>
       </div>
       <div className="map-column-list">
-        {count > 0 ? children : <p>선택된 상위 항목이 없습니다.</p>}
+        {count > 0 ? children : muted ? <p>선택된 상위 항목이 없습니다.</p> : <p>항목이 없습니다.</p>}
       </div>
     </section>
   )
@@ -429,6 +486,8 @@ function MapColumn({ children, count, muted = false, title }: MapColumnProps) {
 type MapButtonProps = {
   active: boolean
   inspected: boolean
+  isJumpTarget: boolean
+  isJumpAncestor: boolean
   jumpId: number
   count?: string
   label: string
@@ -436,22 +495,23 @@ type MapButtonProps = {
   onInspect: () => void
 }
 
-function MapButton({ active, inspected, jumpId, count, label, onClick, onInspect }: MapButtonProps) {
+function MapButton({ active, inspected, isJumpTarget, isJumpAncestor, jumpId: _jumpId, count, label, onClick, onInspect }: MapButtonProps) {
   const ref = useRef<HTMLButtonElement>(null)
-  const prevJumpId = useRef(jumpId)
 
-  useEffect(() => {
-    if (active && jumpId !== prevJumpId.current && ref.current) {
-      ref.current.scrollIntoView({ block: 'center', behavior: 'smooth' })
-    }
-    prevJumpId.current = jumpId
-  }, [active, jumpId])
+  const classes = [
+    'map-item',
+    active && 'active',
+    inspected && 'inspected',
+    isJumpTarget && 'jump-target',
+    isJumpAncestor && 'jump-ancestor',
+  ].filter(Boolean).join(' ')
 
   return (
     <button
       ref={ref}
+
       type="button"
-      className={['map-item', active && 'active', inspected && 'inspected', active && jumpId > 0 && 'jumped'].filter(Boolean).join(' ')}
+      className={classes}
       onClick={onClick}
     >
       <div className="map-item-main">
