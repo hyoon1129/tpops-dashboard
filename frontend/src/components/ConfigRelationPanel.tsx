@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { sectionDefinitions } from '../constants/dashboard'
 import type { SectionDefinition, SectionKey, SectionState, TableRow, TableValue } from '../types/config'
 
@@ -25,12 +25,67 @@ type ConfigRelationPanelProps = {
   selection: ConfigRelationSelection | null
 }
 
+type RelationPanelTab = 'details' | 'responseTime'
+
+type ServiceResponseMetric = {
+  avgResponseTimeMs: number | null
+  avgResponseTimeSec: number | null
+  businessName: string | null
+  documentCount: number
+  serverName: string | null
+  serviceName: string
+}
+
+type ResponseTimeRange = '1시간' | '1일' | '1주' | '직접'
+
+const responseTimeRanges: ResponseTimeRange[] = ['1시간', '1일', '1주', '직접']
+
 const definitionBySection = (section: SectionKey): SectionDefinition =>
   sectionDefinitions.find((definition) => definition.label === section) ?? sectionDefinitions[0]
 
 const displayValue = (value: TableValue) => (value === null || value === undefined || value === '' ? '-' : String(value))
 
 const rowName = (row?: TableRow | null) => String(row?.NAME ?? '-')
+
+const formatNumber = (value: number | null, maximumFractionDigits = 1) =>
+  value === null
+    ? '-'
+    : value.toLocaleString('ko-KR', { maximumFractionDigits, minimumFractionDigits: 0 })
+
+const pad = (value: number) => String(value).padStart(2, '0')
+
+const rangeToMilliseconds = (range: ResponseTimeRange) => {
+  if (range === '1시간') {
+    return 60 * 60 * 1000
+  }
+  if (range === '1주') {
+    return 7 * 24 * 60 * 60 * 1000
+  }
+  return 24 * 60 * 60 * 1000
+}
+
+function toDatetimeLocal(date: Date) {
+  return [
+    date.getFullYear(),
+    '-',
+    pad(date.getMonth() + 1),
+    '-',
+    pad(date.getDate()),
+    'T',
+    pad(date.getHours()),
+    ':',
+    pad(date.getMinutes()),
+  ].join('')
+}
+
+function customRangeFromNow() {
+  const to = new Date()
+  const from = new Date(to.getTime() - rangeToMilliseconds('1일'))
+  return {
+    from: toDatetimeLocal(from),
+    to: toDatetimeLocal(to),
+  }
+}
 
 const byName = (rows: TableRow[], name: TableValue) =>
   rows.find((row) => rowName(row) === String(name ?? '')) ?? null
@@ -199,6 +254,157 @@ function ChildGroups({
   )
 }
 
+function ServiceResponseTimeTab({ fileId, serviceName }: { fileId: number | null; serviceName: string }) {
+  const [range, setRange] = useState<ResponseTimeRange>('1일')
+  const [customRange] = useState(customRangeFromNow)
+  const [customFrom, setCustomFrom] = useState(customRange.from)
+  const [customTo, setCustomTo] = useState(customRange.to)
+  const [customApplied, setCustomApplied] = useState(false)
+  const [metric, setMetric] = useState<ServiceResponseMetric | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchMetric = useCallback(async (from: Date, to: Date, signal?: AbortSignal) => {
+    try {
+      setLoading(true)
+      setError(null)
+      const params = new URLSearchParams({
+        from: from.toISOString(),
+        to: to.toISOString(),
+      })
+      if (fileId !== null) {
+        params.set('fileId', String(fileId))
+      }
+      const response = await fetch(
+        `/api/dashboard/services/${encodeURIComponent(serviceName)}/response-time?${params.toString()}`,
+        { signal },
+      )
+      if (!response.ok) {
+        throw new Error(await response.text())
+      }
+      setMetric((await response.json()) as ServiceResponseMetric)
+    } catch (caught) {
+      if (!signal?.aborted) {
+        setMetric(null)
+        setError(caught instanceof Error ? caught.message : '응답시간을 불러오지 못했습니다.')
+      }
+    } finally {
+      if (!signal?.aborted) {
+        setLoading(false)
+      }
+    }
+  }, [fileId, serviceName])
+
+  useEffect(() => {
+    if (range === '직접') {
+      return
+    }
+    const controller = new AbortController()
+    const to = new Date()
+    const from = new Date(to.getTime() - rangeToMilliseconds(range))
+    const timer = window.setTimeout(() => {
+      fetchMetric(from, to, controller.signal)
+    }, 0)
+
+    return () => {
+      window.clearTimeout(timer)
+      controller.abort()
+    }
+  }, [fetchMetric, range])
+
+  const applyCustomRange = () => {
+    const from = new Date(customFrom)
+    const to = new Date(customTo)
+    if (Number.isNaN(from.getTime()) || Number.isNaN(to.getTime())) {
+      setError('조회 기간 형식이 올바르지 않습니다.')
+      return
+    }
+    if (from >= to) {
+      setError('시작 시간은 종료 시간보다 이전이어야 합니다.')
+      return
+    }
+    setCustomApplied(true)
+    fetchMetric(from, to)
+  }
+  const appliedLabel = range === '직접'
+    ? customApplied ? '직접 선택' : '기간 선택'
+    : `최근 ${range}`
+
+  return (
+    <section className="config-relation-section">
+      <div className="config-relation-section-header">
+        <h4>서비스 응답시간 요약</h4>
+        <span>{appliedLabel}</span>
+      </div>
+
+      <div className="service-response-ranges" aria-label="응답시간 조회 기간">
+        {responseTimeRanges.map((item) => (
+          <button
+            key={item}
+            type="button"
+            className={range === item ? 'active' : ''}
+            onClick={() => {
+              setRange(item)
+              setError(null)
+              if (item !== '직접') {
+                setCustomApplied(false)
+              }
+            }}
+          >
+            {item}
+          </button>
+        ))}
+      </div>
+
+      {range === '직접' ? (
+        <div className="service-response-custom-range">
+          <label>
+            <span>시작</span>
+            <input
+              type="datetime-local"
+              value={customFrom}
+              onChange={(event) => setCustomFrom(event.target.value)}
+            />
+          </label>
+          <label>
+            <span>종료</span>
+            <input
+              type="datetime-local"
+              value={customTo}
+              onChange={(event) => setCustomTo(event.target.value)}
+            />
+          </label>
+          <button type="button" onClick={applyCustomRange} disabled={loading}>
+            조회
+          </button>
+        </div>
+      ) : null}
+
+      {loading ? <div className="config-relation-empty">응답시간을 조회하는 중입니다.</div> : null}
+      {error ? <div className="config-relation-error">{error}</div> : null}
+
+      {!loading && !error ? (
+        <>
+          <div className="service-response-summary">
+            <div>
+              <span>평균 응답시간</span>
+              <strong>{formatNumber(metric?.avgResponseTimeMs ?? null)} ms</strong>
+            </div>
+            <div>
+              <span>로그 수</span>
+              <strong>{metric ? metric.documentCount.toLocaleString('ko-KR') : '-'}건</strong>
+            </div>
+            <div>
+              <span>SERVER</span>
+              <strong>{metric?.serverName ?? '-'}</strong>
+            </div>
+          </div>
+        </>
+      ) : null}
+    </section>
+  )
+}
+
 export function ConfigRelationPanel({
   onClose,
   onSelectRelated,
@@ -206,6 +412,10 @@ export function ConfigRelationPanel({
   sections,
   selection,
 }: ConfigRelationPanelProps) {
+  const [tabState, setTabState] = useState<{ activeTab: RelationPanelTab; selectionKey: string }>({
+    activeTab: 'details',
+    selectionKey: '',
+  })
   const context = useMemo(() => {
     if (!selection) {
       return null
@@ -218,6 +428,14 @@ export function ConfigRelationPanel({
   }
 
   const definition = definitionBySection(selection.section)
+  const selectionKey = `${selection.section}:${rowName(selection.row)}`
+  const activeTab = tabState.selectionKey === selectionKey ? tabState.activeTab : 'details'
+  const showTabs = selection.section === 'SERVICE'
+  const tabs: Array<{ key: RelationPanelTab; label: string }> = [
+    { key: 'details', label: '기본 정보' },
+    { key: 'responseTime', label: '응답시간' },
+  ]
+  const selectedFileId = typeof selection.row.fileId === 'number' ? selection.row.fileId : null
 
   return (
     <aside className={open ? 'config-relation-panel open' : 'config-relation-panel'} role="dialog" aria-label="설정 관계 상세">
@@ -233,26 +451,51 @@ export function ConfigRelationPanel({
         </button>
       </div>
 
-      <PathSection
-        childGroups={context.childGroups}
-        current={selection}
-        onSelectRelated={onSelectRelated}
-        path={context.path}
-      />
-
-      <section className="config-relation-section">
-        <div className="config-relation-section-header">
-          <h4>설정값</h4>
-        </div>
-        <dl className="relationship-config-list">
-          {definition.columns.map((column) => (
-            <div key={column.key}>
-              <dt>{column.label}</dt>
-              <dd>{displayValue(selection.row[column.key])}</dd>
-            </div>
+      {showTabs ? (
+        <div className="config-relation-tabs" role="tablist" aria-label="설정 상세 탭">
+          {tabs.map((tab) => (
+            <button
+              key={tab.key}
+              type="button"
+              className={activeTab === tab.key ? 'active' : ''}
+              onClick={() => setTabState({ activeTab: tab.key, selectionKey })}
+            >
+              {tab.label}
+            </button>
           ))}
-        </dl>
-      </section>
+        </div>
+      ) : null}
+
+      <div className="config-relation-body">
+        {activeTab === 'details' ? (
+          <>
+            <PathSection
+              childGroups={context.childGroups}
+              current={selection}
+              onSelectRelated={onSelectRelated}
+              path={context.path}
+            />
+
+            <section className="config-relation-section">
+              <div className="config-relation-section-header">
+                <h4>설정값</h4>
+              </div>
+              <dl className="relationship-config-list">
+                {definition.columns.map((column) => (
+                  <div key={column.key}>
+                    <dt>{column.label}</dt>
+                    <dd>{displayValue(selection.row[column.key])}</dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+          </>
+        ) : null}
+
+        {activeTab === 'responseTime' && selection.section === 'SERVICE' ? (
+          <ServiceResponseTimeTab fileId={selectedFileId} serviceName={rowName(selection.row)} />
+        ) : null}
+      </div>
     </aside>
   )
 }

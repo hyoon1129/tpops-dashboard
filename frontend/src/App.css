@@ -5,5 +5,7 @@
 @import './styles/service-metrics.css';
 @import './styles/search-results.css';
 @import './styles/relationship-map.css';
-@import './styles/config-table-relations.css';
+@import './styles/config-table.css';
+@import './styles/config-relation-panel.css';
+@import './styles/config-relation-service-response.css';
 @import './styles/responsive.css';

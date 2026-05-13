@@ -1,150 +1,15 @@
-.empty-state {
-  padding: 28px 18px;
-  color: #8a8f98;
-  font-size: 13px;
-}
-
-table {
-  width: 100%;
-  min-width: max-content;
-  border-collapse: collapse;
-}
-
-th,
-td {
-  height: 44px;
-  padding: 0 18px;
-  border-bottom: 1px solid #23252a;
-  text-align: left;
-  white-space: nowrap;
-}
-
-.table-section-service th:first-child,
-.table-section-service td:first-child {
-  width: 190px;
-  min-width: 190px;
-  max-width: 190px;
-}
-
-.table-section-service th:not(:first-child),
-.table-section-service td:not(:first-child) {
-  min-width: 220px;
-}
-
-th {
-  color: #8a8f98;
-  background: #141516;
-  font-size: 12px;
-  font-weight: 600;
-}
-
-.table-scroll thead th {
-  height: 0;
-  border: 0;
-  padding-block: 0;
-  line-height: 0;
-}
-
-.native-header-label {
-  display: block;
-  height: 0;
-  overflow: hidden;
-}
-
-.sort-button {
-  height: 100%;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  padding: 0;
-  font: inherit;
-  font-weight: inherit;
-  cursor: pointer;
-}
-
-.sort-mark {
-  color: #62666d;
-  font-size: 10px;
-}
-
-td {
-  color: #d0d6e0;
-  font-size: 13px;
-  font-weight: 450;
-  font-variant-numeric: tabular-nums;
-}
-
-tbody tr:hover {
-  background: #141516;
-}
-
-th:first-child,
-td:first-child {
-  position: sticky;
-  left: 0;
-  z-index: 2;
-  border-right: 1px solid #23252a;
-  background: #15171c;
-}
-
-th:first-child {
-  z-index: 3;
-  background: #1a1c22;
-}
-
-tbody tr:hover td:first-child {
-  background: #1c1f26;
-}
-
-td strong {
-  color: #f7f8f8;
-  font-weight: 650;
-}
-
-.name-cell-button {
-  max-width: 100%;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  padding: 0;
-  font: inherit;
-  cursor: pointer;
-}
-
-.name-cell-button strong {
-  text-decoration: underline;
-  text-decoration-color: transparent;
-  text-underline-offset: 3px;
-  transition: color 0.12s, text-decoration-color 0.12s;
-}
-
-.name-cell-button:hover strong {
-  color: #c5caff;
-  text-decoration-color: #5e6ad2;
-}
-
-mark {
-  border-radius: 4px;
-  background: rgba(245, 196, 81, 0.22);
-  color: #ffd979;
-  padding: 0 2px;
-}
-
 .config-relation-panel {
   position: fixed;
   top: 0;
   right: 0;
   z-index: 70;
-  width: 340px;
-  max-width: min(340px, 100vw);
+  width: 380px;
+  max-width: min(380px, 100vw);
   height: 100vh;
   display: flex;
   flex-direction: column;
   border-left: 1px solid #34343a;
-  background: #141516;
+  background: #010102;
   box-shadow: -12px 0 40px rgba(0, 0, 0, 0.56);
   overflow: hidden;
   pointer-events: none;
@@ -180,9 +45,10 @@ mark {
   align-items: flex-start;
   gap: 14px;
   flex: 0 0 auto;
-  border-bottom: 1px solid #2b2d33;
-  padding: 20px 18px 16px;
-  background: #18191a;
+  padding: 22px 20px 16px;
+  background:
+    linear-gradient(180deg, rgba(24, 25, 26, 0.92), rgba(1, 1, 2, 0.98)),
+    #010102;
 }
 
 .config-relation-header h3 {
@@ -199,8 +65,8 @@ mark {
   height: 28px;
   flex: 0 0 auto;
   border: 1px solid #34363d;
-  border-radius: 7px;
-  background: #151619;
+  border-radius: 8px;
+  background: #0f1011;
   color: #d0d6e0;
   font: inherit;
   font-size: 13px;
@@ -208,24 +74,95 @@ mark {
   cursor: pointer;
 }
 
-.config-relation-section {
-  border-bottom: 1px solid #25272d;
-  padding: 16px 18px;
+.config-relation-tabs {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: center;
+  gap: 0;
+  flex: 0 0 auto;
+  width: 220px;
+  margin: 0 20px;
+  border-bottom: 1px solid #23252a;
+  background: #010102;
+  padding: 0;
 }
 
-.config-relation-section:last-child {
+.config-relation-tabs button {
+  position: relative;
+  width: 100%;
+  min-height: 48px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #8a8f98;
+  padding: 0;
+  font: inherit;
+  font-size: 14px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: color 0.14s;
+}
+
+.config-relation-tabs button::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  bottom: -1px;
+  left: 0;
+  height: 3px;
+  border-radius: 999px 999px 0 0;
+  background: transparent;
+}
+
+.config-relation-tabs button.active {
+  color: #f7f8f8;
+  font-weight: 800;
+  box-shadow: none;
+}
+
+.config-relation-tabs button.active::after {
+  background: #5e6ad2;
+}
+
+.config-relation-body {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: 16px 0 0;
+  background: #010102;
 }
 
-.config-relation-section:last-child .config-relation-section-header {
-  padding: 0 18px;
+.config-relation-tabs + .config-relation-body {
+  margin: 0;
+  border: 0;
+  border-radius: 0;
+  background: #010102;
+  padding-top: 14px;
 }
 
-.config-relation-section:last-child .relationship-config-list {
-  padding-top: 8px;
+.config-relation-section {
+  margin: 0 20px 12px;
+  border: 1px solid #23252a;
+  border-radius: 12px;
+  background: #0f1011;
+  padding: 16px;
+}
+
+.config-relation-section + .config-relation-section {
+  margin-top: 12px;
+}
+
+.config-relation-tabs + .config-relation-body .config-relation-section {
+  margin-right: 20px;
+  margin-left: 20px;
+  border-right: 1px solid #23252a;
+  border-left: 1px solid #23252a;
+  border-radius: 12px;
+}
+
+.config-relation-tabs + .config-relation-body .config-relation-section:first-child {
+  border-top: 1px solid #23252a;
 }
 
 .config-relation-section-header {
@@ -252,6 +189,17 @@ mark {
   margin: 10px 0 0;
   color: #737982;
   font-size: 12px;
+}
+
+.config-relation-error {
+  margin: 10px 0 0;
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  border-radius: 8px;
+  background: rgba(220, 38, 38, 0.12);
+  color: #fecaca;
+  padding: 10px;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .config-relation-path {
@@ -449,4 +397,3 @@ mark {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-

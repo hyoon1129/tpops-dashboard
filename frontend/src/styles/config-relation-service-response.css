@@ -1,0 +1,123 @@
+.service-response-ranges {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 14px;
+}
+
+.service-response-ranges button {
+  height: 32px;
+  border: 1px solid #2b2d33;
+  border-radius: 7px;
+  background: #101113;
+  color: #8a8f98;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.service-response-ranges button.active {
+  border-color: #5e6ad2;
+  background: #191a28;
+  color: #f7f8f8;
+}
+
+.service-response-ranges button:hover {
+  border-color: #5e6ad2;
+}
+
+.service-response-custom-range {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+  border: 1px solid #2b2d33;
+  border-radius: 9px;
+  background: #101113;
+  padding: 12px;
+}
+
+.service-response-custom-range label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.service-response-custom-range label span {
+  color: #8a8f98;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.service-response-custom-range input {
+  height: 34px;
+  min-width: 0;
+  border: 1px solid #34363d;
+  border-radius: 7px;
+  background: #151619;
+  color: #f7f8f8;
+  padding: 0 9px;
+  font: inherit;
+  font-size: 12px;
+}
+
+.service-response-custom-range button {
+  height: 34px;
+  border: 1px solid #5e6ad2;
+  border-radius: 7px;
+  background: #5e6ad2;
+  color: #ffffff;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.service-response-custom-range button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.service-response-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  overflow: hidden;
+  margin-top: 14px;
+  border: 1px solid #2b2d33;
+  border-radius: 9px;
+  background: #101113;
+}
+
+.service-response-summary div {
+  min-width: 0;
+  border-right: 1px solid #2b2d33;
+  border-bottom: 1px solid #2b2d33;
+  padding: 13px;
+}
+
+.service-response-summary div:nth-child(2n) {
+  border-right: 0;
+}
+
+.service-response-summary div:nth-last-child(-n + 2) {
+  border-bottom: 0;
+}
+
+.service-response-summary span {
+  display: block;
+  margin-bottom: 8px;
+  color: #8a8f98;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.service-response-summary strong {
+  display: block;
+  overflow: hidden;
+  color: #f7f8f8;
+  font-size: 18px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

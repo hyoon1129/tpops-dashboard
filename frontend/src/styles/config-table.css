@@ -1,0 +1,134 @@
+.empty-state {
+  padding: 28px 18px;
+  color: #8a8f98;
+  font-size: 13px;
+}
+
+table {
+  width: 100%;
+  min-width: max-content;
+  border-collapse: collapse;
+}
+
+th,
+td {
+  height: 44px;
+  padding: 0 18px;
+  border-bottom: 1px solid #23252a;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.table-section-service th:first-child,
+.table-section-service td:first-child {
+  width: 190px;
+  min-width: 190px;
+  max-width: 190px;
+}
+
+.table-section-service th:not(:first-child),
+.table-section-service td:not(:first-child) {
+  min-width: 220px;
+}
+
+th {
+  color: #8a8f98;
+  background: #141516;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.table-scroll thead th {
+  height: 0;
+  border: 0;
+  padding-block: 0;
+  line-height: 0;
+}
+
+.native-header-label {
+  display: block;
+  height: 0;
+  overflow: hidden;
+}
+
+.sort-button {
+  height: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  font: inherit;
+  font-weight: inherit;
+  cursor: pointer;
+}
+
+.sort-mark {
+  color: #62666d;
+  font-size: 10px;
+}
+
+td {
+  color: #d0d6e0;
+  font-size: 13px;
+  font-weight: 450;
+  font-variant-numeric: tabular-nums;
+}
+
+tbody tr:hover {
+  background: #141516;
+}
+
+th:first-child,
+td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  border-right: 1px solid #23252a;
+  background: #15171c;
+}
+
+th:first-child {
+  z-index: 3;
+  background: #1a1c22;
+}
+
+tbody tr:hover td:first-child {
+  background: #1c1f26;
+}
+
+td strong {
+  color: #f7f8f8;
+  font-weight: 650;
+}
+
+.name-cell-button {
+  max-width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.name-cell-button strong {
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 3px;
+  transition: color 0.12s, text-decoration-color 0.12s;
+}
+
+.name-cell-button:hover strong {
+  color: #c5caff;
+  text-decoration-color: #5e6ad2;
+}
+
+mark {
+  border-radius: 4px;
+  background: rgba(245, 196, 81, 0.22);
+  color: #ffd979;
+  padding: 0 2px;
+}

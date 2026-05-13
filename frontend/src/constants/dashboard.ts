@@ -151,7 +151,12 @@ export const sectionDefinitions: SectionDefinition[] = [
     columns: columns([
       'NAME', 'businessName', 'svrname', 'svctime',
     ], { NAME: 'serviceName', businessName: 'businessCode.businessName' }, { businessName: '업무' }),
-    toRows: (items) => items.map((item) => ({ NAME: item.serviceName, ...pick(item, sectionDefinitions[4].columns.slice(1).map((column) => column.key)) })),
+    toRows: (items) => items.map((item) => ({
+      NAME: item.serviceName,
+      fileId: item.fileId,
+      serverConfigId: item.serverConfigId,
+      ...pick(item, sectionDefinitions[4].columns.slice(1).map((column) => column.key)),
+    })),
   },
   {
     label: 'GATEWAY',
