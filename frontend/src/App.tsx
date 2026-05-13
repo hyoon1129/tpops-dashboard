@@ -5,6 +5,7 @@ import { ConfigTable } from './components/ConfigTable'
 import { RelationshipMap } from './components/RelationshipMap'
 import { SearchResults } from './components/SearchResults'
 import { SectionCards } from './components/SectionCards'
+import { ServiceMetricsPage } from './components/ServiceMetricsPage'
 import { Sidebar } from './components/Sidebar'
 import { WorkspaceHeader } from './components/WorkspaceHeader'
 import { useConfigDashboard } from './hooks/useConfigDashboard'
@@ -73,7 +74,7 @@ function App() {
 
   const handleViewChange = (view: Parameters<typeof dashboard.selectView>[0]) => {
     dashboard.selectView(view)
-    if (view === '구성 트리') {
+    if (view !== '설정 목록') {
       setRelationPanelOpen(false)
     }
   }
@@ -111,7 +112,7 @@ function App() {
           servers={dashboard.servers}
         />
 
-        {dashboard.activeView !== '구성 트리' && !dashboard.isGlobalSearch ? (
+        {dashboard.activeView === '설정 목록' && !dashboard.isGlobalSearch ? (
           <SectionCards
             compact={sectionCardsCompact}
             isGlobalSearch={dashboard.isGlobalSearch}
@@ -129,11 +130,13 @@ function App() {
               <h2>
                 {dashboard.activeView === '구성 트리'
                   ? '구성 트리'
+                  : dashboard.activeView === '서비스 응답시간'
+                  ? '서비스 응답시간'
                   : dashboard.isGlobalSearch ? '전체 검색 결과' : `${dashboard.currentDefinition.label} 설정`}
               </h2>
               {tableHeadingDescription ? <p>{tableHeadingDescription}</p> : null}
             </div>
-            {!dashboard.isGlobalSearch && dashboard.activeView !== '구성 트리' ? (
+            {!dashboard.isGlobalSearch && dashboard.activeView === '설정 목록' ? (
               <div className="table-actions">
                 <div className="table-search">
                   <span aria-hidden="true">/</span>
@@ -159,8 +162,8 @@ function App() {
             ) : null}
           </div>
 
-          {dashboard.error ? <div className="empty-state">{dashboard.error}</div> : null}
-          {dashboard.loadingServers || dashboard.searchLoading ? <div className="empty-state">데이터를 불러오는 중입니다.</div> : null}
+          {dashboard.error && dashboard.activeView !== '서비스 응답시간' ? <div className="empty-state">{dashboard.error}</div> : null}
+          {dashboard.activeView !== '서비스 응답시간' && (dashboard.loadingServers || dashboard.searchLoading) ? <div className="empty-state">데이터를 불러오는 중입니다.</div> : null}
 
           {!dashboard.error && !dashboard.loadingServers && dashboard.activeView === '구성 트리' ? (
             <RelationshipMap
@@ -169,7 +172,11 @@ function App() {
             />
           ) : null}
 
-          {!dashboard.error && !dashboard.loadingServers && dashboard.activeView !== '구성 트리' && dashboard.isGlobalSearch ? (
+          {dashboard.activeView === '서비스 응답시간' ? (
+            <ServiceMetricsPage />
+          ) : null}
+
+          {!dashboard.error && !dashboard.loadingServers && dashboard.activeView === '설정 목록' && dashboard.isGlobalSearch ? (
             <SearchResults
               expandedSections={dashboard.expandedSearchSections}
               groups={dashboard.searchResultsBySection}
@@ -181,7 +188,7 @@ function App() {
             />
           ) : null}
 
-          {!dashboard.error && !dashboard.loadingServers && dashboard.activeView !== '구성 트리' && !dashboard.isGlobalSearch ? (
+          {!dashboard.error && !dashboard.loadingServers && dashboard.activeView === '설정 목록' && !dashboard.isGlobalSearch ? (
             <ConfigTable
               currentDefinition={dashboard.currentDefinition}
               currentState={dashboard.currentState}

@@ -26,6 +26,16 @@ const NAV_ICONS: Record<string, ReactElement> = {
       <path d="M10 6.5V9.5M10 9.5H4M10 9.5H16M4 9.5V13.5M16 9.5V13.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   ),
+  '서비스 응답시간': (
+    <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false">
+      <path d="M3 15.5H17" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M4.5 13L8 9.5L10.5 12L15.5 5.5" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="4.5" cy="13" r="1.2" fill="currentColor" />
+      <circle cx="8" cy="9.5" r="1.2" fill="currentColor" />
+      <circle cx="10.5" cy="12" r="1.2" fill="currentColor" />
+      <circle cx="15.5" cy="5.5" r="1.2" fill="currentColor" />
+    </svg>
+  ),
 }
 
 export function Sidebar({ activeView, collapsed, onViewChange, onCollapsedChange }: SidebarProps) {

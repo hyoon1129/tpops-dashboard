@@ -22,7 +22,7 @@ export const useConfigDashboard = () => {
   const [servers, setServers] = useState<ServerInfo[]>([])
   const [selectedServerId, setSelectedServerId] = useState<number | null>(null)
   const [activeView, setActiveView] = useState<DashboardView>(() =>
-    location.pathname.endsWith('/tree') ? '구성 트리' : '설정 목록'
+    location.pathname.endsWith('/tree') ? '구성 트리' : location.pathname.endsWith('/metrics') ? '서비스 응답시간' : '설정 목록'
   )
   const [selectedSection, setSelectedSection] = useState<SectionKey>('SERVER')
   const [globalKeyword, setGlobalKeyword] = useState('')
@@ -356,7 +356,7 @@ export const useConfigDashboard = () => {
 
   const selectView = (view: DashboardView) => {
     setActiveView(view)
-    history.pushState(null, '', view === '구성 트리' ? '/tree' : '/list')
+    history.pushState(null, '', view === '구성 트리' ? '/tree' : view === '서비스 응답시간' ? '/metrics' : '/list')
     setGlobalKeyword('')
   }
 
