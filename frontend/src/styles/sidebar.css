@@ -1,0 +1,116 @@
+.sidebar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  align-self: start;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px 20px;
+  border-right: 1px solid #23252a;
+  background: #050506;
+}
+
+.sidebar-toggle {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #23252a;
+  border-radius: 8px;
+  background: #0f1011;
+  color: #d0d6e0;
+  font: inherit;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0;
+}
+
+.brand-mark {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  background: #5e6ad2;
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.brand strong {
+  color: #f7f8f8;
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.sidebar-collapsed .brand {
+  justify-content: center;
+  padding: 0;
+}
+
+.sidebar-collapsed .brand div,
+.sidebar-collapsed .side-nav span {
+  display: none;
+}
+
+.sidebar-collapsed .sidebar {
+  align-items: center;
+  padding-inline: 0;
+}
+
+.sidebar-collapsed .side-nav,
+.sidebar-collapsed .side-nav button {
+  align-items: center;
+}
+
+.sidebar-collapsed .side-nav button {
+  width: 40px;
+  min-height: 40px;
+  padding: 0;
+  justify-content: center;
+}
+
+.side-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.side-nav button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  border: 0;
+  border-radius: 8px;
+  padding: 9px 8px;
+  background: transparent;
+  color: #8a8f98;
+  text-align: left;
+  cursor: pointer;
+}
+
+.side-nav button svg {
+  flex: 0 0 auto;
+}
+
+.side-nav button span {
+  color: inherit;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.side-nav button.active,
+.side-nav button:hover {
+  background: #141516;
+  color: #f7f8f8;
+}
+

@@ -90,7 +90,7 @@ type DatePickerInputProps = {
 
 function DatePickerInput({ label, value, startDate, endDate, isStart, otherDate, alignRight, onChange }: DatePickerInputProps) {
   const [open, setOpen] = useState(false)
-  const [timeText, setTimeText] = useState(formatTime(value))
+  const [timeTextOverride, setTimeTextOverride] = useState<string | null>(null)
   const [timeError, setTimeError] = useState<string | null>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
 
@@ -99,8 +99,6 @@ function DatePickerInput({ label, value, startDate, endDate, isStart, otherDate,
   const isToday = value.toDateString() === now.toDateString()
   const maxTime = isToday ? now : new Date(new Date().setHours(23, 59, 59, 999))
   const minTime = new Date(new Date().setHours(0, 0, 0, 0))
-
-  useEffect(() => { setTimeText(formatTime(value)); setTimeError(null) }, [value])
 
   useEffect(() => {
     if (!open) return
@@ -111,7 +109,8 @@ function DatePickerInput({ label, value, startDate, endDate, isStart, otherDate,
     return () => document.removeEventListener('mousedown', handler)
   }, [open])
 
-  const timeDirty = timeText !== formatTime(value)
+  const timeText = timeTextOverride ?? formatTime(value)
+  const timeDirty = timeTextOverride !== null && timeTextOverride !== formatTime(value)
 
   const handleCalendarChange = (date: Date | null) => {
     if (!date) return
@@ -120,6 +119,8 @@ function DatePickerInput({ label, value, startDate, endDate, isStart, otherDate,
     // 시작 > 종료 방지
     if (isStart && clamped >= otherDate) return
     if (!isStart && clamped <= otherDate) return
+    setTimeTextOverride(null)
+    setTimeError(null)
     onChange(clamped)
   }
 
@@ -144,6 +145,7 @@ function DatePickerInput({ label, value, startDate, endDate, isStart, otherDate,
       return
     }
     onChange(next)
+    setTimeTextOverride(null)
     setTimeError(null)
   }
 
@@ -185,7 +187,7 @@ function DatePickerInput({ label, value, startDate, endDate, isStart, otherDate,
                 type="text"
                 className={timeError ? 'metrics-abs-input error' : 'metrics-abs-input'}
                 value={timeText}
-                onChange={(e) => { setTimeText(e.target.value); setTimeError(null) }}
+                onChange={(e) => { setTimeTextOverride(e.target.value); setTimeError(null) }}
                 onKeyDown={(e) => { if (e.key === 'Enter') handleTimeConfirm() }}
                 spellCheck={false}
                 placeholder="HH:mm:ss.SSS"
@@ -223,9 +225,12 @@ export function ServiceMetricsPage() {
   const fromRef = useRef(from)
   const toRef = useRef(to)
   const activePresetRef = useRef(activePreset)
-  fromRef.current = from
-  toRef.current = to
-  activePresetRef.current = activePreset
+
+  useEffect(() => {
+    fromRef.current = from
+    toRef.current = to
+    activePresetRef.current = activePreset
+  }, [activePreset, from, to])
 
   const fetchMetrics = useCallback(async () => {
     // 프리셋이 활성화된 경우 현재 시각 기준으로 범위 재계산 (자동 새로고침 시 유용)

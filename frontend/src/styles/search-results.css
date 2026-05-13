@@ -1,0 +1,82 @@
+.search-section {
+  overflow: hidden;
+  border: 1px solid #2b2d33;
+  border-radius: 10px;
+  background: #0f1011;
+}
+
+.search-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 16px;
+  padding: 15px 18px;
+  border-bottom: 1px solid #2b2d33;
+  background: #17181b;
+}
+
+.search-section-name {
+  display: block;
+  margin: 0;
+  font-size: 13px;
+  font-weight: 750;
+  letter-spacing: 0.4px;
+}
+
+.search-section-domain .search-section-header::before { background: #c4b5fd; }
+.search-section-domain .search-section-name { color: #c4b5fd; }
+
+.search-section-node .search-section-header::before { background: #93c5fd; }
+.search-section-node .search-section-name { color: #93c5fd; }
+
+.search-section-svrgroup .search-section-header::before { background: #a5f3fc; }
+.search-section-svrgroup .search-section-name { color: #a5f3fc; }
+
+.search-section-server .search-section-header::before { background: #bbf7d0; }
+.search-section-server .search-section-name { color: #bbf7d0; }
+
+.search-section-service .search-section-header::before { background: #fef08a; }
+.search-section-service .search-section-name { color: #fef08a; }
+
+.search-section-gateway .search-section-header::before { background: #fda4af; }
+.search-section-gateway .search-section-name { color: #fda4af; }
+
+.search-section-header p {
+  margin: 4px 0 0;
+  color: #8a8f98;
+  font-size: 12px;
+}
+
+.search-section-header button {
+  margin-left: auto;
+  height: 30px;
+  border: 1px solid rgba(94, 106, 210, 0.82);
+  border-radius: 8px;
+  background: rgba(94, 106, 210, 0.18);
+  color: #e3e6ff;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.search-section-header button:hover {
+  border-color: #8791ff;
+  background: rgba(94, 106, 210, 0.3);
+}
+
+.search-section-header::before {
+  content: '';
+  width: 3px;
+  align-self: stretch;
+  border-radius: 999px;
+  background: #5e6ad2;
+}
+
+.search-table-scroll {
+  overflow-x: auto;
+  scrollbar-color: #3e3e44 #0f1011;
+  scrollbar-width: thin;
+}
+

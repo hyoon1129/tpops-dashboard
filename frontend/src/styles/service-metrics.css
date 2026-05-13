@@ -1,0 +1,571 @@
+.metrics-page {
+  padding: 18px;
+}
+
+.metrics-toolbar {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 18px;
+}
+
+.metrics-presets {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.metrics-preset-btn {
+  height: 36px;
+  border: 1px solid #2e3038;
+  border-radius: 8px;
+  background: #141516;
+  color: #8a8f98;
+  padding: 0 14px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.12s, color 0.12s, background 0.12s;
+}
+
+.metrics-preset-btn:hover {
+  border-color: #5e6ad2;
+  color: #f7f8f8;
+}
+
+.metrics-preset-btn.active {
+  border-color: #5e6ad2;
+  background: rgba(94, 106, 210, 0.15);
+  color: #a5aeef;
+}
+
+.metrics-toolbar-right {
+  display: flex;
+  align-items: end;
+  gap: 10px;
+}
+
+.metrics-fetch-btn {
+  height: 36px;
+  border: 1px solid #5e6ad2;
+  border-radius: 8px;
+  background: #5e6ad2;
+  color: #ffffff;
+  padding: 0 16px;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.metrics-fetch-btn:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.metric-field {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.metric-field label {
+  color: #8a8f98;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+
+/* 응답시간 임계값 색상 */
+.ms-caution { color: #fbbf24; font-weight: 600; }
+.ms-warning  { color: #f97316; font-weight: 600; }
+.ms-danger   { color: #ef4444; font-weight: 600; }
+
+/* 마지막 조회 */
+.metrics-last-fetched {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+  font-size: 11px;
+  color: #5a6070;
+}
+
+.metrics-datepicker-footer {
+  clear: both;
+  border-top: 1px solid #30333b;
+  background: #18191d;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+}
+.metrics-datepicker-footer-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.metrics-datepicker-footer-label {
+  color: #5a6070;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+  width: 58px;
+}
+.metrics-datepicker-confirm {
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid #3b82f6;
+  background: rgba(59,130,246,0.15);
+  color: #60a5fa;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+.metrics-datepicker-confirm:hover {
+  background: #3b82f6;
+  color: #fff;
+}
+.metrics-datepicker-error {
+  margin: 6px 0 0;
+  font-size: 11px;
+  color: #fca5a5;
+  line-height: 1.5;
+}
+.metrics-datepicker-error code {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  color: #f87171;
+}
+
+/* 월/년 드롭다운 */
+.react-datepicker__month-select,
+.react-datepicker__year-select {
+  background: #2a2d35 !important;
+  color: #f0f1f3 !important;
+  border: 1px solid #30333b !important;
+  border-radius: 5px !important;
+  padding: 2px 4px !important;
+  font: inherit !important;
+  font-size: 12px !important;
+  cursor: pointer;
+}
+.react-datepicker__month-select:focus,
+.react-datepicker__year-select:focus {
+  outline: none;
+  border-color: #3b82f6 !important;
+}
+
+.metric-dateinput-trigger {
+  height: 36px;
+  min-width: 220px;
+  border: 1px solid #23252a;
+  border-radius: 8px;
+  background: #141516;
+  color: #f0f1f3;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 12px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: border-color 0.15s;
+}
+.metric-dateinput-trigger:hover {
+  border-color: #3b82f6;
+}
+
+.metric-dateinput-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  z-index: 9999;
+}
+.metric-dateinput-panel.align-right {
+  left: auto;
+  right: 0;
+  border: 1px solid #30333b;
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.6);
+  overflow: hidden;
+  background: #18191d;
+}
+.metric-dateinput-panel .react-datepicker {
+  box-shadow: none !important;
+  border: none !important;
+  border-radius: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: stretch !important;
+}
+.metric-dateinput-panel .react-datepicker__month-container {
+  float: none !important;
+  flex-shrink: 0 !important;
+}
+.metric-dateinput-panel .react-datepicker__time-container {
+  float: none !important;
+  border-left: 1px solid #30333b !important;
+}
+.metric-dateinput-panel .react-datepicker__time-box {
+  width: 90px !important;
+}
+.metric-dateinput-panel .react-datepicker__time-list {
+  height: 218px !important;
+  overflow-y: auto !important;
+}
+.metric-dateinput-panel .metrics-datepicker-footer {
+  border-top: 1px solid #30333b;
+}
+
+.metrics-abs-input {
+  height: 32px !important;
+  min-width: 0 !important;
+  width: 100%;
+  border: 1px solid #23252a !important;
+  border-radius: 7px !important;
+  background: #0f1012 !important;
+  color: #f0f1f3 !important;
+  padding: 0 10px !important;
+  font: inherit !important;
+  font-size: 12px !important;
+  font-family: 'SF Mono', 'Fira Code', monospace !important;
+  letter-spacing: 0.01em;
+  transition: border-color 0.15s;
+  box-sizing: border-box;
+}
+.metrics-abs-input:focus {
+  outline: none;
+  border-color: #3b82f6 !important;
+}
+.metrics-abs-input.error {
+  border-color: rgba(248, 113, 113, 0.6) !important;
+  color: #fca5a5 !important;
+}
+
+/* react-datepicker 다크 테마 */
+.react-datepicker-wrapper {
+  display: block;
+}
+.react-datepicker-popper {
+  z-index: 9999 !important;
+}
+.react-datepicker {
+  font-family: inherit !important;
+  font-size: 13px !important;
+  background: #18191d !important;
+  border: 1px solid #30333b !important;
+  border-radius: 12px !important;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.6) !important;
+  overflow: hidden;
+  padding: 0;
+}
+.react-datepicker__triangle {
+  display: none !important;
+}
+.react-datepicker__header {
+  background: #18191d !important;
+  border-bottom: 1px solid #30333b !important;
+  padding: 14px 12px 10px !important;
+}
+.react-datepicker__current-month {
+  color: #f0f1f3 !important;
+  font-size: 13px !important;
+  font-weight: 600 !important;
+  margin-bottom: 8px !important;
+}
+.react-datepicker__day-names {
+  margin-top: 4px;
+}
+.react-datepicker__day-name {
+  color: #5a6070 !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  width: 32px !important;
+  line-height: 28px !important;
+  margin: 0 2px !important;
+}
+.react-datepicker__month {
+  margin: 8px 10px !important;
+}
+.react-datepicker__day {
+  color: #c8ccd4 !important;
+  border-radius: 6px !important;
+  width: 32px !important;
+  line-height: 30px !important;
+  margin: 2px !important;
+  transition: background 0.1s, color 0.1s;
+}
+.react-datepicker__day:hover:not(.react-datepicker__day--disabled) {
+  background: #2a2d35 !important;
+  color: #f0f1f3 !important;
+}
+.react-datepicker__day--selected,
+.react-datepicker__day--keyboard-selected {
+  background: #3b82f6 !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+}
+.react-datepicker__day--in-range {
+  background: rgba(59,130,246,0.18) !important;
+  color: #c8ccd4 !important;
+  border-radius: 0 !important;
+}
+.react-datepicker__day--range-start {
+  background: #3b82f6 !important;
+  color: #fff !important;
+  border-radius: 6px 0 0 6px !important;
+}
+.react-datepicker__day--range-end {
+  background: #3b82f6 !important;
+  color: #fff !important;
+  border-radius: 0 6px 6px 0 !important;
+}
+.react-datepicker__day--range-start.react-datepicker__day--range-end {
+  border-radius: 6px !important;
+}
+.react-datepicker__day--in-selecting-range:not(.react-datepicker__day--selecting-range-start) {
+  background: rgba(59,130,246,0.12) !important;
+  border-radius: 0 !important;
+}
+.react-datepicker__day--outside-month {
+  color: #383c46 !important;
+}
+.react-datepicker__day--disabled {
+  color: #383c46 !important;
+  cursor: not-allowed !important;
+  opacity: 0.45;
+}
+.react-datepicker__navigation {
+  top: 14px !important;
+}
+.react-datepicker__navigation-icon::before {
+  border-color: #5a6070 !important;
+  border-width: 2px 2px 0 0 !important;
+  width: 7px !important;
+  height: 7px !important;
+}
+.react-datepicker__navigation:hover .react-datepicker__navigation-icon::before {
+  border-color: #f0f1f3 !important;
+}
+/* 시간 선택 */
+.react-datepicker__time-container {
+  border-left: 1px solid #30333b !important;
+  width: 90px !important;
+}
+.react-datepicker-time__header {
+  color: #5a6070 !important;
+  font-size: 11px !important;
+  font-weight: 600 !important;
+  padding: 14px 0 10px !important;
+  background: #18191d !important;
+  border-bottom: 1px solid #30333b !important;
+}
+.react-datepicker__time {
+  background: #18191d !important;
+}
+.react-datepicker__time-box {
+  width: 90px !important;
+}
+.react-datepicker__time-list-item {
+  color: #c8ccd4 !important;
+  font-size: 12px !important;
+  height: 28px !important;
+  line-height: 28px !important;
+  padding: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+.react-datepicker__time-list-item:hover {
+  background: #2a2d35 !important;
+  color: #f0f1f3 !important;
+}
+.react-datepicker__time-list-item--selected {
+  background: #3b82f6 !important;
+  color: #fff !important;
+  font-weight: 600 !important;
+}
+.react-datepicker__time-list-item--disabled {
+  color: #383c46 !important;
+  cursor: not-allowed !important;
+  pointer-events: none !important;
+}
+
+
+.metrics-error {
+  margin-bottom: 18px;
+  border: 1px solid rgba(248, 113, 113, 0.45);
+  border-radius: 8px;
+  background: rgba(220, 38, 38, 0.12);
+  color: #fecaca;
+  padding: 12px 14px;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+
+.metrics-table-section {
+  margin-top: 14px;
+  overflow: hidden;
+  border: 1px solid #23252a;
+  border-radius: 10px;
+  background: #101113;
+}
+
+.metrics-table-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border-bottom: 1px solid #23252a;
+  background: #141516;
+}
+
+.metrics-table-header h3 {
+  margin: 0;
+  color: #f7f8f8;
+  font-size: 15px;
+  font-weight: 780;
+}
+
+.metrics-table-header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.metrics-table-header span {
+  color: #8a8f98;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.metrics-search-box {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.metrics-search-box input {
+  height: 30px;
+  min-width: 200px;
+  border: 1px solid #2e3038;
+  border-radius: 7px;
+  background: #0f1011;
+  color: #d0d6e0;
+  padding: 0 28px 0 10px;
+  font: inherit;
+  font-size: 12px;
+  outline: none;
+}
+
+.metrics-search-box input:focus {
+  border-color: #5e6ad2;
+}
+
+.metrics-search-box input::placeholder {
+  color: #4b5060;
+}
+
+.metrics-search-clear {
+  position: absolute;
+  right: 6px;
+  border: 0;
+  background: transparent;
+  color: #6b7280;
+  font-size: 10px;
+  cursor: pointer;
+  padding: 2px 3px;
+  line-height: 1;
+}
+
+.metrics-search-clear:hover {
+  color: #d0d6e0;
+}
+
+.metrics-th-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+  letter-spacing: inherit;
+  cursor: pointer;
+  padding: 0;
+  white-space: nowrap;
+}
+
+.metrics-sort-mark {
+  color: #3e4350;
+  font-size: 10px;
+}
+
+.metrics-sort-mark.active {
+  color: #a5aeef;
+}
+
+.metrics-table-wrap {
+  overflow-x: auto;
+  scrollbar-color: #3e3e44 #0f1011;
+  scrollbar-width: thin;
+}
+
+.metrics-table {
+  width: 100%;
+  min-width: 820px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.metrics-table th,
+.metrics-table td {
+  height: 46px;
+  border-bottom: 1px solid #23252a;
+  padding: 0 14px;
+  color: #cdd1d8;
+  font-size: 13px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.metrics-table th {
+  color: #8a8f98;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0;
+}
+
+.metrics-table td:first-child {
+  color: #f7f8f8;
+  font-weight: 780;
+}
+
+.metrics-table th:nth-child(4),
+.metrics-table th:nth-child(5),
+.metrics-table th:nth-child(6),
+.metrics-table td:nth-child(4),
+.metrics-table td:nth-child(5),
+.metrics-table td:nth-child(6) {
+  text-align: right;
+}
+
+.metrics-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
