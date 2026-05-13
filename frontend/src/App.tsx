@@ -1,5 +1,6 @@
 import './App.css'
 import { useEffect, useRef, useState } from 'react'
+import { ConfigRelationPanel, type ConfigRelationSelection } from './components/ConfigRelationPanel'
 import { ConfigTable } from './components/ConfigTable'
 import { RelationshipMap } from './components/RelationshipMap'
 import { SearchResults } from './components/SearchResults'
@@ -12,7 +13,10 @@ function App() {
   const dashboard = useConfigDashboard()
   const [showTop, setShowTop] = useState(false)
   const [sectionCardsCompact, setSectionCardsCompact] = useState(false)
+  const [relationSelection, setRelationSelection] = useState<ConfigRelationSelection | null>(null)
+  const [relationPanelOpen, setRelationPanelOpen] = useState(false)
   const sectionCardsCompactRef = useRef(false)
+  const relationOpenRafRef = useRef<number | null>(null)
   const tableHeadingDescription = dashboard.activeView === '구성 트리'
     ? 'NODE → SVRGROUP → SERVER → SERVICE 연결 구조'
     : dashboard.isGlobalSearch
@@ -35,9 +39,50 @@ function App() {
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
+  useEffect(() => () => {
+    if (relationOpenRafRef.current) {
+      cancelAnimationFrame(relationOpenRafRef.current)
+    }
+  }, [])
+
+  const openRelationPanel = (selection: ConfigRelationSelection) => {
+    setRelationSelection(selection)
+    if (relationPanelOpen) {
+      return
+    }
+
+    if (relationOpenRafRef.current) {
+      cancelAnimationFrame(relationOpenRafRef.current)
+    }
+    relationOpenRafRef.current = requestAnimationFrame(() => {
+      setRelationPanelOpen(true)
+      relationOpenRafRef.current = null
+    })
+  }
+
   const handleSectionSelect = (section: Parameters<typeof dashboard.selectSection>[0]) => {
     dashboard.selectSection(section)
+    setRelationPanelOpen(false)
     window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
+  const handleRelationSelect = (selection: ConfigRelationSelection) => {
+    dashboard.selectSection(selection.section)
+    openRelationPanel(selection)
+  }
+
+  const handleViewChange = (view: Parameters<typeof dashboard.selectView>[0]) => {
+    dashboard.selectView(view)
+    if (view === '구성 트리') {
+      setRelationPanelOpen(false)
+    }
+  }
+
+  const handleGlobalKeywordChange = (keyword: string) => {
+    dashboard.handleGlobalKeywordChange(keyword)
+    if (keyword.trim()) {
+      setRelationPanelOpen(false)
+    }
   }
 
   return (
@@ -52,14 +97,14 @@ function App() {
       <Sidebar
         activeView={dashboard.activeView}
         collapsed={dashboard.sidebarCollapsed}
-        onViewChange={dashboard.selectView}
+        onViewChange={handleViewChange}
         onCollapsedChange={dashboard.setSidebarCollapsed}
       />
 
       <section className="workspace">
         <WorkspaceHeader
           globalKeyword={dashboard.globalKeyword}
-          onGlobalKeywordChange={dashboard.handleGlobalKeywordChange}
+          onGlobalKeywordChange={handleGlobalKeywordChange}
           onServerChange={dashboard.handleServerChange}
           selectedServer={dashboard.selectedServer}
           selectedServerId={dashboard.selectedServerId}
@@ -131,6 +176,7 @@ function App() {
               keyword={dashboard.globalKeyword}
               resultCount={dashboard.globalSearchRowTotal}
               searchLoading={dashboard.searchLoading}
+              onNameClick={(section, row) => openRelationPanel({ row, section })}
               onToggleSection={dashboard.toggleSearchSection}
             />
           ) : null}
@@ -140,6 +186,7 @@ function App() {
               currentDefinition={dashboard.currentDefinition}
               currentState={dashboard.currentState}
               filteredRows={dashboard.filteredRows}
+              onNameClick={(row) => openRelationPanel({ row, section: dashboard.selectedSection })}
               onSort={dashboard.handleSort}
               sectionKeyword={dashboard.deferredSectionKeyword}
               selectedSection={dashboard.selectedSection}
@@ -171,6 +218,22 @@ function App() {
             <p>데이터 불러오는 중</p>
           </div>
         </div>
+      ) : null}
+      <ConfigRelationPanel
+        key={relationSelection ? `${relationSelection.section}:${String(relationSelection.row.NAME ?? '')}` : 'empty'}
+        onClose={() => setRelationPanelOpen(false)}
+        onSelectRelated={handleRelationSelect}
+        open={relationPanelOpen}
+        sections={dashboard.sections}
+        selection={relationSelection}
+      />
+      {relationSelection ? (
+        <button
+          type="button"
+          className={relationPanelOpen ? 'config-relation-backdrop open' : 'config-relation-backdrop'}
+          aria-label="관계 패널 닫기"
+          onClick={() => setRelationPanelOpen(false)}
+        />
       ) : null}
     </main>
   )

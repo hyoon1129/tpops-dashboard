@@ -6,6 +6,7 @@ type ConfigTableProps = {
   currentDefinition: SectionDefinition
   currentState: SectionState
   filteredRows: TableRow[]
+  onNameClick: (row: TableRow) => void
   onSort: (column: Column) => void
   sectionKeyword: string
   selectedSection: SectionKey
@@ -52,6 +53,7 @@ export const ConfigTable = memo(function ConfigTable({
   currentDefinition,
   currentState,
   filteredRows,
+  onNameClick,
   onSort,
   sectionKeyword,
   selectedSection,
@@ -165,7 +167,15 @@ export const ConfigTable = memo(function ConfigTable({
                       : row[column.key] == null || row[column.key] === ''
                       ? <span className="cell-null">-</span>
                       : columnIndex === 0
-                      ? <strong>{highlightedText(row[column.key], sectionKeyword)}</strong>
+                      ? (
+                          <button
+                            type="button"
+                            className="name-cell-button"
+                            onClick={() => onNameClick(row)}
+                          >
+                            <strong>{highlightedText(row[column.key], sectionKeyword)}</strong>
+                          </button>
+                        )
                       : highlightedText(row[column.key], sectionKeyword)}
                   </td>
                 ))}

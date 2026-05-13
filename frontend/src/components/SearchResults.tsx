@@ -13,6 +13,7 @@ type SearchResultsProps = {
   keyword: string
   resultCount: number
   searchLoading: boolean
+  onNameClick: (section: SectionKey, row: TableRow) => void
   onToggleSection: (section: SectionKey) => void
 }
 
@@ -30,6 +31,7 @@ export function SearchResults({
   keyword,
   resultCount,
   searchLoading,
+  onNameClick,
   onToggleSection,
 }: SearchResultsProps) {
   return (
@@ -73,7 +75,15 @@ export function SearchResults({
                             : row[column.key] == null || row[column.key] === ''
                             ? <span className="cell-null">-</span>
                             : columnIndex === 0
-                            ? <strong>{highlightedText(row[column.key], keyword)}</strong>
+                            ? (
+                                <button
+                                  type="button"
+                                  className="name-cell-button"
+                                  onClick={() => onNameClick(section.label, row)}
+                                >
+                                  <strong>{highlightedText(row[column.key], keyword)}</strong>
+                                </button>
+                              )
                             : highlightedText(row[column.key], keyword)}
                         </td>
                       ))}

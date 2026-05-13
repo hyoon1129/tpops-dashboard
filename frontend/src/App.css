@@ -629,11 +629,11 @@
   letter-spacing: 0.4px;
 }
 
-.search-section-domain .search-section-header::before { background: #d8b4fe; }
-.search-section-domain .search-section-name { color: #d8b4fe; }
+.search-section-domain .search-section-header::before { background: #c4b5fd; }
+.search-section-domain .search-section-name { color: #c4b5fd; }
 
-.search-section-node .search-section-header::before { background: #fde68a; }
-.search-section-node .search-section-name { color: #fde68a; }
+.search-section-node .search-section-header::before { background: #93c5fd; }
+.search-section-node .search-section-name { color: #93c5fd; }
 
 .search-section-svrgroup .search-section-header::before { background: #a5f3fc; }
 .search-section-svrgroup .search-section-name { color: #a5f3fc; }
@@ -644,8 +644,8 @@
 .search-section-service .search-section-header::before { background: #fef08a; }
 .search-section-service .search-section-name { color: #fef08a; }
 
-.search-section-gateway .search-section-header::before { background: #fecaca; }
-.search-section-gateway .search-section-name { color: #fecaca; }
+.search-section-gateway .search-section-header::before { background: #fda4af; }
+.search-section-gateway .search-section-name { color: #fda4af; }
 
 .search-section-header p {
   margin: 4px 0 0;
@@ -797,25 +797,25 @@
 
 /* 섹션별 배지 색상 */
 .section-domain {
-  background: rgba(124, 58, 237, 0.32);
-  border: 1px solid rgba(167, 120, 255, 0.60);
-  color: #d8b4fe;
+  background: rgba(99, 102, 241, 0.28);
+  border: 1px solid rgba(165, 180, 252, 0.58);
+  color: #c4b5fd;
 }
 
 .section-node {
-  background: rgba(217, 119, 6, 0.28);
-  border: 1px solid rgba(251, 191, 36, 0.55);
-  color: #fde68a;
+  background: rgba(37, 99, 235, 0.26);
+  border: 1px solid rgba(147, 197, 253, 0.55);
+  color: #93c5fd;
 }
 
 .section-svrgroup {
-  background: rgba(8, 145, 178, 0.28);
-  border: 1px solid rgba(34, 211, 238, 0.55);
+  background: rgba(8, 145, 178, 0.26);
+  border: 1px solid rgba(103, 232, 249, 0.55);
   color: #a5f3fc;
 }
 
 .section-server {
-  background: rgba(22, 163, 74, 0.28);
+  background: rgba(22, 163, 74, 0.26);
   border: 1px solid rgba(74, 222, 128, 0.55);
   color: #bbf7d0;
 }
@@ -827,9 +827,9 @@
 }
 
 .section-gateway {
-  background: rgba(220, 38, 38, 0.26);
-  border: 1px solid rgba(248, 113, 113, 0.55);
-  color: #fecaca;
+  background: rgba(225, 29, 72, 0.24);
+  border: 1px solid rgba(253, 164, 175, 0.55);
+  color: #fda4af;
 }
 
 /* inspector 내 섹션 배지 */
@@ -1298,11 +1298,350 @@ td strong {
   font-weight: 650;
 }
 
+.name-cell-button {
+  max-width: 100%;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  font: inherit;
+  cursor: pointer;
+}
+
+.name-cell-button strong {
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 3px;
+  transition: color 0.12s, text-decoration-color 0.12s;
+}
+
+.name-cell-button:hover strong {
+  color: #c5caff;
+  text-decoration-color: #5e6ad2;
+}
+
 mark {
   border-radius: 4px;
   background: rgba(245, 196, 81, 0.22);
   color: #ffd979;
   padding: 0 2px;
+}
+
+.config-relation-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 70;
+  width: 340px;
+  max-width: min(340px, 100vw);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid #34343a;
+  background: #141516;
+  box-shadow: -12px 0 40px rgba(0, 0, 0, 0.56);
+  overflow: hidden;
+  pointer-events: none;
+  transform: translateX(100%);
+  transition: transform 0.26s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.config-relation-panel.open {
+  pointer-events: auto;
+  transform: translateX(0);
+}
+
+.config-relation-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 59;
+  border: 0;
+  background: rgba(0, 0, 0, 0);
+  cursor: default;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.config-relation-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.config-relation-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 14px;
+  flex: 0 0 auto;
+  border-bottom: 1px solid #2b2d33;
+  padding: 20px 18px 16px;
+  background: #18191a;
+}
+
+.config-relation-header h3 {
+  margin: 7px 0 0;
+  color: #f7f8f8;
+  font-size: 18px;
+  font-weight: 750;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.config-relation-header button {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 auto;
+  border: 1px solid #34363d;
+  border-radius: 7px;
+  background: #151619;
+  color: #d0d6e0;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.config-relation-section {
+  border-bottom: 1px solid #25272d;
+  padding: 16px 18px;
+}
+
+.config-relation-section:last-child {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 0 0;
+}
+
+.config-relation-section:last-child .config-relation-section-header {
+  padding: 0 18px;
+}
+
+.config-relation-section:last-child .relationship-config-list {
+  padding-top: 8px;
+}
+
+.config-relation-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.config-relation-section-header h4 {
+  margin: 0;
+  color: #f7f8f8;
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.config-relation-section-header span {
+  color: #8a8f98;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.config-relation-empty {
+  margin: 10px 0 0;
+  color: #737982;
+  font-size: 12px;
+}
+
+.config-relation-path {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.config-relation-path-step {
+  position: relative;
+  display: block;
+}
+
+.config-relation-path-step:nth-child(2) {
+  padding-left: 18px;
+}
+
+.config-relation-path-step:nth-child(3) {
+  padding-left: 36px;
+}
+
+.config-relation-path-step:nth-child(4) {
+  padding-left: 54px;
+}
+
+.config-relation-path-step:nth-child(5),
+.config-relation-path-step:nth-child(6) {
+  padding-left: 72px;
+}
+
+.config-relation-path-step:not(:first-child)::before {
+  content: '';
+  position: absolute;
+  left: calc(var(--path-depth, 18px) - 12px);
+  top: -7px;
+  width: 12px;
+  height: 25px;
+  border-left: 1px solid #3a3d44;
+  border-bottom: 1px solid #3a3d44;
+  border-bottom-left-radius: 6px;
+  pointer-events: none;
+}
+
+.config-relation-path-step:nth-child(2) {
+  --path-depth: 18px;
+}
+
+.config-relation-path-step:nth-child(3) {
+  --path-depth: 36px;
+}
+
+.config-relation-path-step:nth-child(4) {
+  --path-depth: 54px;
+}
+
+.config-relation-path-step:nth-child(5),
+.config-relation-path-step:nth-child(6) {
+  --path-depth: 72px;
+}
+
+.config-relation-path-step button {
+  min-width: 0;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid #2b2d33;
+  border-radius: 8px;
+  background: #101113;
+  color: #d0d6e0;
+  padding: 8px;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.config-relation-path-step button em {
+  margin-left: auto;
+  color: #8a8f98;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.config-relation-path-step button.active {
+  border-color: #5e6ad2;
+  background: #191a28;
+}
+
+.config-relation-path-step button:hover {
+  border-color: #5e6ad2;
+}
+
+.config-relation-path-step strong {
+  min-width: 0;
+  overflow: hidden;
+  color: #f7f8f8;
+  font-size: 12px;
+  font-weight: 750;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.config-relation-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  padding-left: 14px;
+}
+
+.config-relation-group {
+  border-left: 1px solid #30323a;
+  padding-left: 10px;
+}
+
+.config-relation-group-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  padding: 3px 2px;
+  font: inherit;
+  margin: 0;
+  cursor: pointer;
+}
+
+.config-relation-group-title strong {
+  color: #8a8f98;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.config-relation-group-title:hover {
+  background: transparent;
+}
+
+.config-relation-links {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 6px;
+  max-height: 180px;
+  overflow-y: auto;
+  padding: 0 2px 0 14px;
+  scrollbar-color: #3e3e44 #141516;
+  scrollbar-width: thin;
+}
+
+.config-relation-group .config-relation-links {
+  position: relative;
+  margin: 4px 0 0 8px;
+}
+
+.config-relation-group .config-relation-links::before {
+  content: '';
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  left: 0;
+  width: 1px;
+  background: #30323a;
+}
+
+.config-relation-links button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #d0d6e0;
+  padding: 7px 8px;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.config-relation-links button:hover {
+  background: #191a28;
+}
+
+.config-relation-links strong {
+  min-width: 0;
+  overflow: hidden;
+  color: #f7f8f8;
+  font-size: 12px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 @media (max-width: 1100px) {
