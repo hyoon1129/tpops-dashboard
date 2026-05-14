@@ -1,5 +1,6 @@
 import './App.css'
 import { useEffect, useRef, useState } from 'react'
+import { ConfigUploadPage } from './components/ConfigUploadPage'
 import { ConfigRelationPanel, type ConfigRelationSelection } from './components/ConfigRelationPanel'
 import { ConfigTable } from './components/ConfigTable'
 import { RelationshipMap } from './components/RelationshipMap'
@@ -104,6 +105,7 @@ function App() {
 
       <section className="workspace">
         <WorkspaceHeader
+          key={dashboard.selectedServerId ?? 'no-server'}
           globalKeyword={dashboard.globalKeyword}
           onGlobalKeywordChange={handleGlobalKeywordChange}
           onServerChange={dashboard.handleServerChange}
@@ -132,6 +134,8 @@ function App() {
                   ? '구성 트리'
                   : dashboard.activeView === '서비스 응답시간'
                   ? '서비스 응답시간'
+                  : dashboard.activeView === '설정 파일'
+                  ? '설정 파일'
                   : dashboard.isGlobalSearch ? '전체 검색 결과' : `${dashboard.currentDefinition.label} 설정`}
               </h2>
               {tableHeadingDescription ? <p>{tableHeadingDescription}</p> : null}
@@ -174,6 +178,15 @@ function App() {
 
           {dashboard.activeView === '서비스 응답시간' ? (
             <ServiceMetricsPage />
+          ) : null}
+
+          {dashboard.activeView === '설정 파일' ? (
+            <ConfigUploadPage
+              key={dashboard.selectedServerId ?? 'no-server'}
+              onParsed={dashboard.reloadDashboard}
+              onServerUpdate={dashboard.updateSelectedServer}
+              selectedServer={dashboard.selectedServer}
+            />
           ) : null}
 
           {!dashboard.error && !dashboard.loadingServers && dashboard.activeView === '설정 목록' && dashboard.isGlobalSearch ? (

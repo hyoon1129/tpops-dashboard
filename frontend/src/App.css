@@ -2,6 +2,7 @@
 @import './styles/sidebar.css';
 @import './styles/workspace-header.css';
 @import './styles/config-list.css';
+@import './styles/config-upload.css';
 @import './styles/service-metrics.css';
 @import './styles/search-results.css';
 @import './styles/relationship-map.css';
