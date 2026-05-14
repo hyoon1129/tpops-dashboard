@@ -104,6 +104,10 @@ public class ConfigFile {
 		this.current = false;
 	}
 
+	public void markCurrent() {
+		this.current = true;
+	}
+
 	public void markSuccess() {
 		this.parseStatus = ParseStatus.SUCCESS;
 		this.errorMessage = null;

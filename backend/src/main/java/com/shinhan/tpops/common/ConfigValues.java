@@ -16,6 +16,10 @@ public final class ConfigValues {
 		if (value == null || value.isBlank()) {
 			return null;
 		}
-		return Integer.valueOf(value);
+		try {
+			return Integer.valueOf(value);
+		} catch (NumberFormatException e) {
+			return null;
+		}
 	}
 }

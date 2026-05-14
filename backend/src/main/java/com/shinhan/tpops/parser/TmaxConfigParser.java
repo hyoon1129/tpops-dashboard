@@ -72,11 +72,16 @@ public class TmaxConfigParser {
 
 	private ConfigSection parseSection(String line) {
 		String sectionName = line.substring(1).trim().toUpperCase(Locale.ROOT);
-		return ConfigSection.valueOf(sectionName);
+		try {
+			return ConfigSection.valueOf(sectionName);
+		} catch (IllegalArgumentException e) {
+			// *TMAX, *ENVFILE 등 미지원 섹션은 null 반환 → 이후 라인 skip
+			return null;
+		}
 	}
 
 	private boolean startsNewEntry(String line) {
-		return !Character.isWhitespace(line.charAt(0));
+		return !line.isEmpty() && !Character.isWhitespace(line.charAt(0));
 	}
 
 	private MutableEntry newEntry(ConfigSection section, String line, int lineNumber) {
