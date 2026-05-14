@@ -56,6 +56,13 @@ public class ServerInfo {
 		this.description = description;
 	}
 
+	public void update(String serverName, String serverIp, String environment, String description) {
+		this.serverName = serverName;
+		this.serverIp = serverIp;
+		this.environment = environment;
+		this.description = description;
+	}
+
 	@PrePersist
 	void prePersist() {
 		LocalDateTime now = LocalDateTime.now();

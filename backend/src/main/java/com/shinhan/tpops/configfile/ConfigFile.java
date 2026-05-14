@@ -16,6 +16,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.Lob;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrePersist;
@@ -54,6 +55,10 @@ public class ConfigFile {
 	@Column(name = "file_hash", nullable = false, length = 128)
 	private String fileHash;
 
+	@Lob
+	@Column(name = "file_content", columnDefinition = "LONGTEXT")
+	private String fileContent;
+
 	@Column(name = "uploaded_at", nullable = false, updatable = false)
 	private LocalDateTime uploadedAt;
 
@@ -85,12 +90,13 @@ public class ConfigFile {
 	@OneToMany(mappedBy = "configFile")
 	private List<GatewayConfig> gatewayConfigs = new ArrayList<>();
 
-	public ConfigFile(ServerInfo serverInfo, String fileName, Integer versionNo, Boolean current, String fileHash) {
+	public ConfigFile(ServerInfo serverInfo, String fileName, Integer versionNo, Boolean current, String fileHash, String fileContent) {
 		this.serverInfo = serverInfo;
 		this.fileName = fileName;
 		this.versionNo = versionNo;
 		this.current = current;
 		this.fileHash = fileHash;
+		this.fileContent = fileContent;
 		this.parseStatus = ParseStatus.PENDING;
 	}
 

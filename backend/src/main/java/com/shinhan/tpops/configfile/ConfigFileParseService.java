@@ -2,6 +2,7 @@ package com.shinhan.tpops.configfile;
 
 import com.shinhan.tpops.businesscode.BusinessCode;
 import com.shinhan.tpops.businesscode.BusinessCodeRepository;
+import com.shinhan.tpops.configquery.ConfigFileDetailResponse;
 import com.shinhan.tpops.configquery.ConfigFileResponse;
 import com.shinhan.tpops.domainconfig.DomainConfig;
 import com.shinhan.tpops.domainconfig.DomainConfigRepository;
@@ -22,7 +23,7 @@ import com.shinhan.tpops.serviceconfig.ServiceConfigRepository;
 import com.shinhan.tpops.svrgroupconfig.SvrgroupConfig;
 import com.shinhan.tpops.svrgroupconfig.SvrgroupConfigRepository;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
+import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.LinkedHashMap;
@@ -41,6 +42,8 @@ import org.springframework.web.server.ResponseStatusException;
 @RequiredArgsConstructor
 public class ConfigFileParseService {
 
+	private static final Charset CONFIG_FILE_CHARSET = Charset.forName("EUC-KR");
+
 	private final ServerInfoRepository serverInfoRepository;
 	private final ConfigFileRepository configFileRepository;
 	private final DomainConfigRepository domainConfigRepository;
@@ -58,12 +61,10 @@ public class ConfigFileParseService {
 			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Server not found. serverId=" + serverId));
 
 		byte[] bytes = readBytes(file);
+		String fileContent = new String(bytes, CONFIG_FILE_CHARSET);
+		ParsedTmaxConfig parsedConfig = tmaxConfigParser.parse(fileContent);
 		String fileHash = sha256(bytes);
 		ConfigFile currentConfigFile = configFileRepository.findByServerInfoIdAndCurrentTrue(serverId).orElse(null);
-		if (currentConfigFile != null && currentConfigFile.getFileHash().equals(fileHash)) {
-			return ConfigFileResponse.from(currentConfigFile);
-		}
-
 		if (currentConfigFile != null) {
 			currentConfigFile.markNotCurrent();
 		}
@@ -74,14 +75,35 @@ public class ConfigFileParseService {
 			fileName(file),
 			versionNo,
 			true,
-			fileHash
+			fileHash,
+			fileContent
 		));
 
-		ParsedTmaxConfig parsedConfig = tmaxConfigParser.parse(new String(bytes, StandardCharsets.UTF_8));
 		saveParsedConfig(configFile, parsedConfig);
 		configFile.markSuccess();
 
 		return ConfigFileResponse.from(configFile);
+	}
+
+	@Transactional(readOnly = true)
+	public List<ConfigFileResponse> findHistory(Long serverId) {
+		if (!serverInfoRepository.existsById(serverId)) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Server not found. serverId=" + serverId);
+		}
+
+		return configFileRepository.findByServerInfoIdOrderByVersionNoDesc(serverId).stream()
+			.map(ConfigFileResponse::from)
+			.toList();
+	}
+
+	@Transactional(readOnly = true)
+	public ConfigFileDetailResponse findDetail(Long serverId, Long fileId) {
+		ConfigFile configFile = configFileRepository.findById(fileId)
+			.orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Config file not found. fileId=" + fileId));
+		if (!configFile.getServerInfo().getId().equals(serverId)) {
+			throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Config file not found. fileId=" + fileId);
+		}
+		return ConfigFileDetailResponse.from(configFile);
 	}
 
 	private byte[] readBytes(MultipartFile file) {
