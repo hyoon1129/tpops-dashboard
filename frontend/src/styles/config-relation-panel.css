@@ -60,7 +60,14 @@
   overflow-wrap: anywhere;
 }
 
-.config-relation-header button {
+.config-relation-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.config-relation-header-actions > button:not(.export-btn) {
   width: 28px;
   height: 28px;
   flex: 0 0 auto;
@@ -72,6 +79,10 @@
   font-size: 13px;
   font-weight: 800;
   cursor: pointer;
+}
+
+.config-relation-header .export-btn {
+  height: 28px;
 }
 
 .config-relation-tabs {

@@ -1,5 +1,6 @@
 import './App.css'
 import { useEffect, useRef, useState } from 'react'
+import { exportSectionToExcel } from './utils/exportExcel'
 import { ConfigUploadPage } from './components/ConfigUploadPage'
 import { ConfigRelationPanel, type ConfigRelationSelection } from './components/ConfigRelationPanel'
 import { ConfigTable } from './components/ConfigTable'
@@ -156,6 +157,19 @@ function App() {
                     </button>
                   ) : null}
                 </div>
+                <button
+                  type="button"
+                  className="export-btn"
+                  aria-label="섹션 전체 엑셀로 내보내기"
+                  disabled={dashboard.filteredRows.length === 0}
+                  onClick={() => exportSectionToExcel(dashboard.selectedSection, dashboard.filteredRows, dashboard.sections)}
+                >
+                  <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                    <path d="M10 13V3M10 13L6 9M10 13L14 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M3 15h14v2H3v-2z" fill="currentColor" />
+                  </svg>
+                  내보내기
+                </button>
               </div>
             ) : null}
           </div>

@@ -207,6 +207,33 @@
   color: #f7f8f8;
 }
 
+.export-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid #23252a;
+  border-radius: 8px;
+  background: #141516;
+  color: #d0d6e0;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.export-btn:hover:not(:disabled) {
+  background: #1c1e21;
+  color: #f7f8f8;
+}
+
+.export-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .table-shell {
   position: relative;
 }

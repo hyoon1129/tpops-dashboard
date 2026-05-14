@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { sectionDefinitions } from '../constants/dashboard'
 import type { SectionDefinition, SectionKey, SectionState, TableRow, TableValue } from '../types/config'
+import { exportItemToExcel } from '../utils/exportExcel'
 
 export type ConfigRelationSelection = {
   row: TableRow
@@ -446,9 +447,29 @@ export function ConfigRelationPanel({
           </span>
           <h3>{rowName(selection.row)}</h3>
         </div>
-        <button type="button" aria-label="닫기" onClick={onClose}>
-          x
-        </button>
+        <div className="config-relation-header-actions">
+          <button
+            type="button"
+            className="export-btn"
+            aria-label="엑셀로 내보내기"
+            onClick={() =>
+              exportItemToExcel(
+                selection.section,
+                selection.row,
+                context.childGroups.map((group) => ({ section: group.section, items: group.items })),
+              )
+            }
+          >
+            <svg width="14" height="14" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+              <path d="M10 13V3M10 13L6 9M10 13L14 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M3 15h14v2H3v-2z" fill="currentColor" />
+            </svg>
+            내보내기
+          </button>
+          <button type="button" aria-label="닫기" onClick={onClose}>
+            x
+          </button>
+        </div>
       </div>
 
       {showTabs ? (
