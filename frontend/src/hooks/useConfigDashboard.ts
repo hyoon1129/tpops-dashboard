@@ -50,13 +50,13 @@ export const useConfigDashboard = () => {
   const deferredSectionKeyword = useDeferredValue(sectionKeyword)
   const selectedServer = servers.find((server) => server.serverId === selectedServerId) ?? null
   const isGlobalSearch = globalKeyword.trim().length > 0
-  const globalSearchRowTotal = Object.values(searchRowsBySection).reduce((total, rows) => total + rows.length, 0)
   const searchResultsBySection = useMemo(() =>
     sectionDefinitions.map((section) => ({
       section,
       rows: searchRowsBySection[section.label],
     })).filter((group) => group.rows.length > 0),
   [searchRowsBySection])
+  const globalSearchRowTotal = Object.values(searchRowsBySection).reduce((total, rows) => total + rows.length, 0)
 
   const relationshipTree = useMemo<RelationshipDomain[]>(() => {
     const domains = relationshipRows.DOMAIN

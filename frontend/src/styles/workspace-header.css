@@ -56,12 +56,13 @@
 }
 
 .search-box {
-  width: min(360px, 36vw);
+  width: 240px;
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 0 11px;
 }
+
 
 .search-box span {
   color: #5e6ad2;
