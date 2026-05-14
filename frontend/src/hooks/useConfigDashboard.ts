@@ -27,7 +27,7 @@ export const useConfigDashboard = () => {
       : location.pathname.endsWith('/metrics')
       ? '서비스 응답시간'
       : location.pathname.endsWith('/upload')
-      ? '설정 파일'
+      ? '설정 관리'
       : '설정 목록'
   )
   const [selectedSection, setSelectedSection] = useState<SectionKey>('SERVER')
@@ -372,7 +372,7 @@ export const useConfigDashboard = () => {
 
   const selectView = (view: DashboardView) => {
     setActiveView(view)
-    history.pushState(null, '', view === '구성 트리' ? '/tree' : view === '서비스 응답시간' ? '/metrics' : view === '설정 파일' ? '/upload' : '/list')
+    history.pushState(null, '', view === '구성 트리' ? '/tree' : view === '서비스 응답시간' ? '/metrics' : view === '설정 관리' ? '/upload' : '/list')
     setGlobalKeyword('')
   }
 

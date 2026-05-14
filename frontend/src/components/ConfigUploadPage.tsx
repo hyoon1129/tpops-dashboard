@@ -19,6 +19,7 @@ const formatDateTime = (value: string | null) => {
     return '-'
   }
   return new Date(value).toLocaleString('ko-KR', {
+    hour12: false,
     month: '2-digit',
     day: '2-digit',
     hour: '2-digit',
@@ -168,6 +169,9 @@ export function ConfigUploadPage({ onParsed, onServerUpdate, selectedServer }: C
     return <div className="empty-state">설정 파일을 업로드할 서버가 없습니다.</div>
   }
 
+  const serverDisplayChanged = serverName.trim() !== selectedServer.serverName
+    || environment.trim() !== (selectedServer.environment ?? '')
+
   return (
     <div className="config-upload-page">
       <div className="upload-settings-row">
@@ -196,7 +200,11 @@ export function ConfigUploadPage({ onParsed, onServerUpdate, selectedServer }: C
               onChange={(event) => setServerName(event.target.value)}
               placeholder="예: 계정계 테스트"
             />
-            <button type="button" onClick={saveServerDisplay} disabled={savingServer}>
+            <button
+              type="button"
+              onClick={saveServerDisplay}
+              disabled={!serverDisplayChanged || !serverName.trim() || savingServer}
+            >
               {savingServer ? '저장 중' : '저장'}
             </button>
           </div>

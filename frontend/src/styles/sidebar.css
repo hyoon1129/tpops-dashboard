@@ -82,6 +82,7 @@
 }
 
 .side-nav {
+  flex: 1;
   display: flex;
   flex-direction: column;
   gap: 3px;
@@ -115,4 +116,8 @@
 .side-nav button:hover {
   background: #141516;
   color: #f7f8f8;
+}
+
+.side-nav button:last-child {
+  margin-top: auto;
 }

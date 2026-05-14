@@ -2,7 +2,7 @@ export type NavItem = {
   label: string
 }
 
-export type DashboardView = '설정 목록' | '구성 트리' | '서비스 응답시간' | '설정 파일'
+export type DashboardView = '설정 목록' | '구성 트리' | '서비스 응답시간' | '설정 관리'
 
 export type ServerInfo = {
   serverId: number

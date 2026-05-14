@@ -130,8 +130,8 @@ function App() {
                   ? '구성 트리'
                   : dashboard.activeView === '서비스 응답시간'
                   ? '서비스 응답시간'
-                  : dashboard.activeView === '설정 파일'
-                  ? '설정 파일'
+                  : dashboard.activeView === '설정 관리'
+                  ? '설정 관리'
                   : dashboard.isGlobalSearch ? '전체 검색 결과' : `${dashboard.currentDefinition.label} 설정`}
               </h2>
               {tableHeadingDescription ? <p>{tableHeadingDescription}</p> : null}
@@ -174,7 +174,7 @@ function App() {
             <ServiceMetricsPage />
           ) : null}
 
-          {dashboard.activeView === '설정 파일' ? (
+          {dashboard.activeView === '설정 관리' ? (
             <ConfigUploadPage
               key={dashboard.selectedServerId ?? 'no-server'}
               onParsed={dashboard.reloadDashboard}
