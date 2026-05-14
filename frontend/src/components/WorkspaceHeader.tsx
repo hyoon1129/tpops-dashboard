@@ -3,19 +3,13 @@ import type { ServerInfo } from '../types/config'
 type WorkspaceHeaderProps = {
   globalKeyword: string
   onGlobalKeywordChange: (keyword: string) => void
-  onServerChange: (serverId: number) => void
   selectedServer: ServerInfo | null
-  selectedServerId: number | null
-  servers: ServerInfo[]
 }
 
 export function WorkspaceHeader({
   globalKeyword,
   onGlobalKeywordChange,
-  onServerChange,
   selectedServer,
-  selectedServerId,
-  servers,
 }: WorkspaceHeaderProps) {
   return (
     <header className="workspace-header">
@@ -25,16 +19,6 @@ export function WorkspaceHeader({
       </div>
 
       <div className="header-tools" aria-label="조회 조건">
-        <select
-          value={selectedServerId ?? ''}
-          onChange={(event) => onServerChange(Number(event.target.value))}
-        >
-          {servers.map((server) => (
-            <option key={server.serverId} value={server.serverId}>
-              {server.serverName}
-            </option>
-          ))}
-        </select>
         <div className="search-box">
           <span aria-hidden="true">/</span>
           <input

@@ -105,13 +105,9 @@ function App() {
 
       <section className="workspace">
         <WorkspaceHeader
-          key={dashboard.selectedServerId ?? 'no-server'}
           globalKeyword={dashboard.globalKeyword}
           onGlobalKeywordChange={handleGlobalKeywordChange}
-          onServerChange={dashboard.handleServerChange}
           selectedServer={dashboard.selectedServer}
-          selectedServerId={dashboard.selectedServerId}
-          servers={dashboard.servers}
         />
 
         {dashboard.activeView === '설정 목록' && !dashboard.isGlobalSearch ? (
@@ -147,7 +143,7 @@ function App() {
                   <input
                     value={dashboard.sectionKeyword}
                     onChange={(event) => dashboard.setSectionKeyword(event.target.value)}
-                    placeholder="현재 섹션 검색"
+                    placeholder={`${dashboard.selectedSection} 내 검색`}
                   />
                   {dashboard.sectionKeyword ? (
                     <button
@@ -160,8 +156,6 @@ function App() {
                     </button>
                   ) : null}
                 </div>
-                <button type="button">필터</button>
-                <button type="button">컬럼</button>
               </div>
             ) : null}
           </div>
