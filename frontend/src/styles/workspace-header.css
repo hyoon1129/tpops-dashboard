@@ -29,6 +29,10 @@
   line-height: 1.15;
 }
 
+.workspace-title {
+  min-width: 0;
+}
+
 .header-tools {
   display: flex;
   align-items: center;
@@ -102,4 +106,3 @@
   background: #23252a;
   color: #f7f8f8;
 }
-

@@ -2,7 +2,7 @@ export type NavItem = {
   label: string
 }
 
-export type DashboardView = '설정 목록' | '구성 트리' | '서비스 응답시간'
+export type DashboardView = '설정 목록' | '구성 트리' | '서비스 응답시간' | '설정 파일'
 
 export type ServerInfo = {
   serverId: number
@@ -10,6 +10,26 @@ export type ServerInfo = {
   serverIp: string
   environment: string
   description: string | null
+  createdAt?: string
+  updatedAt?: string
+}
+
+export type ConfigFileHistory = {
+  fileId: number
+  serverId: number
+  fileName: string
+  versionNo: number
+  current: boolean
+  fileHash: string
+  uploadedAt: string
+  parseStatus: 'PENDING' | 'SUCCESS' | 'FAILED' | 'SKIPPED'
+  errorMessage: string | null
+  parsedAt: string | null
+}
+
+export type ConfigFileDetail = {
+  file: ConfigFileHistory
+  fileContent: string | null
 }
 
 export type SectionKey = 'DOMAIN' | 'NODE' | 'SVRGROUP' | 'SERVER' | 'SERVICE' | 'GATEWAY'

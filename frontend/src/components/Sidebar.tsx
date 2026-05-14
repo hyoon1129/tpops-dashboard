@@ -36,6 +36,13 @@ const NAV_ICONS: Record<string, ReactElement> = {
       <circle cx="15.5" cy="5.5" r="1.2" fill="currentColor" />
     </svg>
   ),
+  '설정 파일': (
+    <svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true" focusable="false">
+      <path d="M4 16.5H16" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
+      <path d="M10 13V3.5M10 3.5L6.5 7M10 3.5L13.5 7" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M5.5 10.5V13.5C5.5 14.6 6.4 15.5 7.5 15.5H12.5C13.6 15.5 14.5 14.6 14.5 13.5V10.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  ),
 }
 
 export function Sidebar({ activeView, collapsed, onViewChange, onCollapsedChange }: SidebarProps) {

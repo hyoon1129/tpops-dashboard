@@ -14,6 +14,7 @@ export const navItems: NavItem[] = [
   { label: '설정 목록' },
   { label: '구성 트리' },
   { label: '서비스 응답시간' },
+  { label: '설정 파일' },
 ]
 
 const pick = (item: Record<string, TableValue>, keys: string[]) =>

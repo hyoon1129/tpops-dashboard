@@ -22,7 +22,13 @@ export const useConfigDashboard = () => {
   const [servers, setServers] = useState<ServerInfo[]>([])
   const [selectedServerId, setSelectedServerId] = useState<number | null>(null)
   const [activeView, setActiveView] = useState<DashboardView>(() =>
-    location.pathname.endsWith('/tree') ? '구성 트리' : location.pathname.endsWith('/metrics') ? '서비스 응답시간' : '설정 목록'
+    location.pathname.endsWith('/tree')
+      ? '구성 트리'
+      : location.pathname.endsWith('/metrics')
+      ? '서비스 응답시간'
+      : location.pathname.endsWith('/upload')
+      ? '설정 파일'
+      : '설정 목록'
   )
   const [selectedSection, setSelectedSection] = useState<SectionKey>('SERVER')
   const [globalKeyword, setGlobalKeyword] = useState('')
@@ -107,6 +113,43 @@ export const useConfigDashboard = () => {
     return definition.toRows(data)
   }, [selectedServerId])
 
+  const reloadDashboard = useCallback(async (signal?: AbortSignal) => {
+    if (selectedServerId === null) {
+      return
+    }
+
+    setInitialDataLoading(true)
+    setSections((current) =>
+      sectionDefinitions.reduce((next, section) => {
+        next[section.label] = { ...current[section.label], loading: true }
+        return next
+      }, { ...current }),
+    )
+
+    const nextRows = initialSearchRows()
+    const nextSections = initialSections()
+    await Promise.all(sectionDefinitions.map(async (section) => {
+      const rows = await loadSectionRows(section, signal)
+      nextRows[section.label] = rows
+      nextSections[section.label] = {
+        rows,
+        total: rows.length,
+        page: 0,
+        last: true,
+        loading: false,
+      }
+    }))
+
+    setSections(nextSections)
+    setRelationshipRows(nextRows)
+    setSearchResults([])
+    setSearchRowsBySection(initialSearchRows())
+    setExpandedSearchSections(new Set())
+    setSortState(null)
+    setError(null)
+    setInitialDataLoading(false)
+  }, [loadSectionRows, selectedServerId])
+
   const compareRows = useCallback((column: Column, direction: SortState['direction']) => (left: TableRow, right: TableRow) => {
     const leftValue = left[column.key]
     const rightValue = right[column.key]
@@ -175,31 +218,7 @@ export const useConfigDashboard = () => {
 
     async function loadSections() {
       try {
-        setInitialDataLoading(true)
-        setSections((current) =>
-          sectionDefinitions.reduce((next, section) => {
-            next[section.label] = { ...current[section.label], loading: true }
-            return next
-          }, { ...current }),
-        )
-
-        const nextRows = initialSearchRows()
-        const nextSections = initialSections()
-        await Promise.all(sectionDefinitions.map(async (section) => {
-          const rows = await loadSectionRows(section, controller.signal)
-          nextRows[section.label] = rows
-          nextSections[section.label] = {
-            rows,
-            total: rows.length,
-            page: 0,
-            last: true,
-            loading: false,
-          }
-        }))
-
-        setSections(nextSections)
-        setRelationshipRows(nextRows)
-        setError(null)
+        await reloadDashboard(controller.signal)
       } catch (caught) {
         if (!controller.signal.aborted) {
           setError(caught instanceof Error ? caught.message : '알 수 없는 오류가 발생했습니다.')
@@ -209,9 +228,6 @@ export const useConfigDashboard = () => {
               return next
             }, { ...current }),
           )
-        }
-      } finally {
-        if (!controller.signal.aborted) {
           setInitialDataLoading(false)
         }
       }
@@ -220,7 +236,7 @@ export const useConfigDashboard = () => {
     loadSections()
 
     return () => controller.abort()
-  }, [loadSectionRows, selectedServerId])
+  }, [reloadDashboard, selectedServerId])
 
   useEffect(() => {
     if (selectedServerId === null || !globalKeyword.trim()) {
@@ -356,8 +372,12 @@ export const useConfigDashboard = () => {
 
   const selectView = (view: DashboardView) => {
     setActiveView(view)
-    history.pushState(null, '', view === '구성 트리' ? '/tree' : view === '서비스 응답시간' ? '/metrics' : '/list')
+    history.pushState(null, '', view === '구성 트리' ? '/tree' : view === '서비스 응답시간' ? '/metrics' : view === '설정 파일' ? '/upload' : '/list')
     setGlobalKeyword('')
+  }
+
+  const updateSelectedServer = (server: ServerInfo) => {
+    setServers((current) => current.map((item) => item.serverId === server.serverId ? server : item))
   }
 
   return {
@@ -377,6 +397,7 @@ export const useConfigDashboard = () => {
     loadingServers,
     relationshipLoading: false,
     relationshipTree,
+    reloadDashboard,
     searchLoading,
     searchResults,
     searchResultsBySection,
@@ -394,5 +415,6 @@ export const useConfigDashboard = () => {
     sidebarCollapsed,
     sortState,
     toggleSearchSection,
+    updateSelectedServer,
   }
 }

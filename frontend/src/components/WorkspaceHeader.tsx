@@ -19,7 +19,7 @@ export function WorkspaceHeader({
 }: WorkspaceHeaderProps) {
   return (
     <header className="workspace-header">
-      <div>
+      <div className="workspace-title">
         <p className="eyebrow">{selectedServer?.environment ?? 'TPOPS'}</p>
         <h1>{selectedServer?.serverName ?? '운영 설정 대시보드'}</h1>
       </div>
