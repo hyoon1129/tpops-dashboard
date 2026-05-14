@@ -556,6 +556,22 @@
   font-weight: 780;
 }
 
+.metrics-service-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: #f7f8f8;
+  font: inherit;
+  font-weight: 780;
+  cursor: pointer;
+  text-align: left;
+}
+
+.metrics-service-link:hover {
+  color: #9daef5;
+  text-decoration: underline;
+}
+
 .metrics-table th:nth-child(4),
 .metrics-table th:nth-child(5),
 .metrics-table th:nth-child(6),

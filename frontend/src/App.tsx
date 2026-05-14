@@ -1,6 +1,7 @@
 import './App.css'
 import { useEffect, useRef, useState } from 'react'
 import { exportSectionToExcel } from './utils/exportExcel'
+import type { SectionKey, TableRow } from './types/config'
 import { ConfigUploadPage } from './components/ConfigUploadPage'
 import { ConfigRelationPanel, type ConfigRelationSelection } from './components/ConfigRelationPanel'
 import { ConfigTable } from './components/ConfigTable'
@@ -18,6 +19,7 @@ function App() {
   const [sectionCardsCompact, setSectionCardsCompact] = useState(false)
   const [relationSelection, setRelationSelection] = useState<ConfigRelationSelection | null>(null)
   const [relationPanelOpen, setRelationPanelOpen] = useState(false)
+  const [treeItemToSelect, setTreeItemToSelect] = useState<{ section: SectionKey; row: TableRow } | null>(null)
   const sectionCardsCompactRef = useRef(false)
   const relationOpenRafRef = useRef<number | null>(null)
   const tableHeadingDescription = dashboard.activeView === '구성 트리'
@@ -69,8 +71,21 @@ function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  const handleTreeInspect = (section: SectionKey, row: TableRow) => {
+    openRelationPanel({ section, row })
+  }
+
+  const handleServiceMetricClick = (serviceName: string) => {
+    const row = dashboard.sections.SERVICE.rows.find((r) => String(r.NAME ?? '') === serviceName)
+    openRelationPanel({ section: 'SERVICE', row: row ?? { NAME: serviceName } })
+  }
+
   const handleRelationSelect = (selection: ConfigRelationSelection) => {
-    dashboard.selectSection(selection.section)
+    if (dashboard.activeView === '구성 트리') {
+      setTreeItemToSelect({ section: selection.section, row: selection.row })
+    } else {
+      dashboard.selectSection(selection.section)
+    }
     openRelationPanel(selection)
   }
 
@@ -179,13 +194,15 @@ function App() {
 
           {!dashboard.error && !dashboard.loadingServers && dashboard.activeView === '구성 트리' ? (
             <RelationshipMap
+              itemToSelect={treeItemToSelect}
               loading={dashboard.relationshipLoading}
+              onInspect={handleTreeInspect}
               tree={dashboard.relationshipTree}
             />
           ) : null}
 
           {dashboard.activeView === '서비스 응답시간' ? (
-            <ServiceMetricsPage />
+            <ServiceMetricsPage onServiceClick={handleServiceMetricClick} />
           ) : null}
 
           {dashboard.activeView === '설정 관리' ? (

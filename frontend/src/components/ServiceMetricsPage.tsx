@@ -207,7 +207,11 @@ function DatePickerInput({ label, value, startDate, endDate, isStart, otherDate,
 }
 
 // ── 메인 컴포넌트 ─────────────────────────────────────────────────
-export function ServiceMetricsPage() {
+type ServiceMetricsPageProps = {
+  onServiceClick?: (serviceName: string) => void
+}
+
+export function ServiceMetricsPage({ onServiceClick }: ServiceMetricsPageProps = {}) {
   const initialRange = useMemo(() => presetRange('1일'), [])
 
   const [from, setFrom] = useState<Date>(initialRange.from)
@@ -392,7 +396,17 @@ export function ServiceMetricsPage() {
               {displayedServices.length > 0 ? (
                 displayedServices.map((metric) => (
                   <tr key={metric.serviceName}>
-                    <td>{metric.serviceName}</td>
+                    <td>
+                      {onServiceClick ? (
+                        <button
+                          type="button"
+                          className="metrics-service-link"
+                          onClick={() => onServiceClick(metric.serviceName)}
+                        >
+                          {metric.serviceName}
+                        </button>
+                      ) : metric.serviceName}
+                    </td>
                     <td>{metric.serverName ?? '-'}</td>
                     <td>{metric.businessName ?? '-'}</td>
                     <td>{metric.documentCount.toLocaleString('ko-KR')}</td>

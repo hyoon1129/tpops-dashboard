@@ -1,21 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
-import { sectionDefinitions } from '../constants/dashboard'
 import type {
   RelationshipDomain,
   RelationshipGroup,
   RelationshipNode,
   RelationshipServer,
-  SectionDefinition,
   SectionKey,
   TableRow,
 } from '../types/config'
-
-type RelationshipSelection = {
-  section: SectionDefinition
-  row: TableRow
-  path: string[]
-}
 
 type SearchHit = {
   label: string
@@ -29,7 +21,9 @@ type SearchHit = {
 }
 
 type RelationshipMapProps = {
+  itemToSelect?: { section: SectionKey; row: TableRow } | null
   loading: boolean
+  onInspect?: (section: SectionKey, row: TableRow) => void
   tree: RelationshipDomain[]
 }
 
@@ -42,24 +36,16 @@ const SECTION_ORDER: Record<SectionKey, number> = {
   GATEWAY: 5,
 }
 
-const definitionBySection = (section: SectionKey) =>
-  sectionDefinitions.find((definition) => definition.label === section) ?? sectionDefinitions[0]
-
-const displayValue = (value: unknown) => (value === null || value === undefined ? '-' : String(value))
-
 const rowName = (row?: TableRow) => String(row?.NAME ?? '-')
 
 const itemKey = (section: SectionKey, row?: TableRow) => `${section}:${rowName(row)}`
 
-export function RelationshipMap({ loading, tree }: RelationshipMapProps) {
+export function RelationshipMap({ itemToSelect, loading, onInspect, tree }: RelationshipMapProps) {
   const [selectedDomainKey, setSelectedDomainKey] = useState<string | null>(null)
   const [selectedNodeKey, setSelectedNodeKey] = useState<string | null>(null)
   const [selectedGroupKey, setSelectedGroupKey] = useState<string | null>(null)
   const [selectedServerKey, setSelectedServerKey] = useState<string | null>(null)
-  const [inspectorData, setInspectorData] = useState<RelationshipSelection | null>(null)
-  const [inspectorOpen, setInspectorOpen] = useState(false)
-  const inspectorRef = useRef<HTMLDivElement>(null)
-  const closeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [inspectedKey, setInspectedKey] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [searchFocused, setSearchFocused] = useState(false)
   const [jumpId, setJumpId] = useState(0)
@@ -84,7 +70,6 @@ export function RelationshipMap({ loading, tree }: RelationshipMapProps) {
   const servers = selectedGroup?.servers ?? []
   const services = selectedServer?.services ?? []
 
-  // 검색 인덱스: 섹션 계층 순 → 이름 가나다 순 정렬
   const searchHits = useMemo<SearchHit[]>(() => {
     const q = searchQuery.trim().toLowerCase()
     if (!q) return []
@@ -140,23 +125,52 @@ export function RelationshipMap({ loading, tree }: RelationshipMapProps) {
     })
   }, [searchQuery, tree])
 
-  const closeInspector = () => {
-    setInspectorOpen(false)
-    closeTimerRef.current = setTimeout(() => setInspectorData(null), 260)
-  }
-
   useEffect(() => {
-    if (!inspectorOpen) return
-    const onMouseDown = (e: MouseEvent) => {
-      if (inspectorRef.current && !inspectorRef.current.contains(e.target as Node)) {
-        closeInspector()
+    if (!itemToSelect) return
+    const { section, row } = itemToSelect
+    const name = rowName(row)
+
+    for (const domainEntry of tree) {
+      const dk = itemKey('DOMAIN', domainEntry.domain)
+      if (section === 'DOMAIN' && rowName(domainEntry.domain) === name) {
+        setSelectedDomainKey(dk); setSelectedNodeKey(null); setSelectedGroupKey(null); setSelectedServerKey(null)
+        setInspectedKey(dk); setJumpTargetKey(dk); setJumpAncestorKeys(new Set()); setJumpId((n) => n + 1)
+        return
+      }
+      for (const nodeEntry of domainEntry.nodes) {
+        const nk = itemKey('NODE', nodeEntry.node)
+        if (section === 'NODE' && rowName(nodeEntry.node) === name) {
+          setSelectedDomainKey(dk); setSelectedNodeKey(nk); setSelectedGroupKey(null); setSelectedServerKey(null)
+          setInspectedKey(nk); setJumpTargetKey(nk); setJumpAncestorKeys(new Set([dk])); setJumpId((n) => n + 1)
+          return
+        }
+        for (const groupEntry of nodeEntry.svrgroups) {
+          const gk = itemKey('SVRGROUP', groupEntry.svrgroup)
+          if (section === 'SVRGROUP' && rowName(groupEntry.svrgroup) === name) {
+            setSelectedDomainKey(dk); setSelectedNodeKey(nk); setSelectedGroupKey(gk); setSelectedServerKey(null)
+            setInspectedKey(gk); setJumpTargetKey(gk); setJumpAncestorKeys(new Set([dk, nk])); setJumpId((n) => n + 1)
+            return
+          }
+          for (const serverEntry of groupEntry.servers) {
+            const sk = itemKey('SERVER', serverEntry.server)
+            if (section === 'SERVER' && rowName(serverEntry.server) === name) {
+              setSelectedDomainKey(dk); setSelectedNodeKey(nk); setSelectedGroupKey(gk); setSelectedServerKey(sk)
+              setInspectedKey(sk); setJumpTargetKey(sk); setJumpAncestorKeys(new Set([dk, nk, gk])); setJumpId((n) => n + 1)
+              return
+            }
+            for (const service of serverEntry.services) {
+              if (section === 'SERVICE' && rowName(service) === name) {
+                const svck = itemKey('SERVICE', service)
+                setSelectedDomainKey(dk); setSelectedNodeKey(nk); setSelectedGroupKey(gk); setSelectedServerKey(sk)
+                setInspectedKey(svck); setJumpTargetKey(svck); setJumpAncestorKeys(new Set([dk, nk, gk, sk])); setJumpId((n) => n + 1)
+                return
+              }
+            }
+          }
+        }
       }
     }
-    document.addEventListener('mousedown', onMouseDown)
-    return () => document.removeEventListener('mousedown', onMouseDown)
-  }, [inspectorOpen])
-
-  useEffect(() => () => { if (closeTimerRef.current) clearTimeout(closeTimerRef.current) }, [])
+  }, [itemToSelect])
 
   useEffect(() => {
     if (jumpId === 0) return
@@ -198,7 +212,6 @@ export function RelationshipMap({ loading, tree }: RelationshipMapProps) {
     return <div className="empty-state">표시할 구성 관계가 없습니다.</div>
   }
 
-  // 클릭 = 탐색 전용
   const selectDomain = (domain: RelationshipDomain) => {
     const key = itemKey('DOMAIN', domain.domain)
     setSelectedDomainKey(key === activeDomainKey ? null : key)
@@ -233,24 +246,16 @@ export function RelationshipMap({ loading, tree }: RelationshipMapProps) {
     setJumpAncestorKeys(new Set())
   }
 
-  // ⓘ 버튼 = inspector 오픈 (토글)
-  const openInspector = (section: SectionKey, row: TableRow, path: string[]) => {
-    const isSame = inspectorData?.section.label === section && inspectorData?.row === row && inspectorOpen
-    if (isSame) { closeInspector(); return }
-    if (closeTimerRef.current) clearTimeout(closeTimerRef.current)
-    setInspectorData({ section: definitionBySection(section), row, path })
-    setInspectorOpen(true)
+  const openInspector = (section: SectionKey, row: TableRow) => {
+    const key = itemKey(section, row)
+    setInspectedKey(key === inspectedKey ? null : key)
+    onInspect?.(section, row)
   }
-
-  const inspectedKey = inspectorOpen && inspectorData
-    ? itemKey(inspectorData.section.label, inspectorData.row)
-    : null
 
   const showSearchDropdown = searchFocused && searchQuery.trim().length > 0
 
   return (
     <div className="relationship-map">
-      {/* 검색 바 */}
       <div className="map-search-bar">
         <input
           className="map-search-input"
@@ -289,7 +294,6 @@ export function RelationshipMap({ loading, tree }: RelationshipMapProps) {
         )}
       </div>
 
-      {/* 브랜치맵 */}
       <div className="map-columns" aria-label="구성 관계 브랜치맵">
         <MapColumn title="DOMAIN" count={domains.length}>
           {domains.map((domain) => {
@@ -304,7 +308,7 @@ export function RelationshipMap({ loading, tree }: RelationshipMapProps) {
                 key={rowName(domain.domain)}
                 label={rowName(domain.domain)}
                 onClick={() => selectDomain(domain)}
-                onInspect={() => openInspector('DOMAIN', domain.domain, [rowName(domain.domain)])}
+                onInspect={() => openInspector('DOMAIN', domain.domain)}
               />
             )
           })}
@@ -323,12 +327,7 @@ export function RelationshipMap({ loading, tree }: RelationshipMapProps) {
                 key={rowName(node.node)}
                 label={rowName(node.node)}
                 onClick={() => selectNode(node)}
-                onInspect={() =>
-                  openInspector('NODE', node.node, [
-                    rowName(selectedDomain?.domain),
-                    rowName(node.node),
-                  ])
-                }
+                onInspect={() => openInspector('NODE', node.node)}
               />
             )
           })}
@@ -347,13 +346,7 @@ export function RelationshipMap({ loading, tree }: RelationshipMapProps) {
                 key={rowName(group.svrgroup)}
                 label={rowName(group.svrgroup)}
                 onClick={() => selectGroup(group)}
-                onInspect={() =>
-                  openInspector('SVRGROUP', group.svrgroup, [
-                    rowName(selectedDomain?.domain),
-                    rowName(selectedNode?.node),
-                    rowName(group.svrgroup),
-                  ])
-                }
+                onInspect={() => openInspector('SVRGROUP', group.svrgroup)}
               />
             )
           })}
@@ -372,14 +365,7 @@ export function RelationshipMap({ loading, tree }: RelationshipMapProps) {
                 key={rowName(server.server)}
                 label={rowName(server.server)}
                 onClick={() => selectServer(server)}
-                onInspect={() =>
-                  openInspector('SERVER', server.server, [
-                    rowName(selectedDomain?.domain),
-                    rowName(selectedNode?.node),
-                    rowName(selectedGroup?.svrgroup),
-                    rowName(server.server),
-                  ])
-                }
+                onInspect={() => openInspector('SERVER', server.server)}
               />
             )
           })}
@@ -396,62 +382,12 @@ export function RelationshipMap({ loading, tree }: RelationshipMapProps) {
                 isJumpAncestor={false}
                 key={rowName(service)}
                 label={rowName(service)}
-                onClick={() =>
-                  openInspector('SERVICE', service, [
-                    rowName(selectedDomain?.domain),
-                    rowName(selectedNode?.node),
-                    rowName(selectedGroup?.svrgroup),
-                    rowName(selectedServer?.server),
-                    rowName(service),
-                  ])
-                }
-                onInspect={() =>
-                  openInspector('SERVICE', service, [
-                    rowName(selectedDomain?.domain),
-                    rowName(selectedNode?.node),
-                    rowName(selectedGroup?.svrgroup),
-                    rowName(selectedServer?.server),
-                    rowName(service),
-                  ])
-                }
+                onClick={() => openInspector('SERVICE', service)}
+                onInspect={() => openInspector('SERVICE', service)}
               />
             )
           })}
         </MapColumn>
-      </div>
-
-      {/* 우측 고정 inspector 패널 */}
-      <div
-        ref={inspectorRef}
-        className={inspectorOpen ? 'relationship-inspector open' : 'relationship-inspector'}
-        role="dialog"
-        aria-label="설정 상세"
-      >
-        {inspectorData && (
-          <>
-            <div className="relationship-inspector-header">
-              <div>
-                <span className={`inspector-section-badge section-${inspectorData.section.label.toLowerCase()}`}>
-                  {inspectorData.section.label}
-                </span>
-                <h3>{String(inspectorData.row.NAME ?? '-')}</h3>
-                <p>{inspectorData.path.filter((p) => p && p !== '-').join(' / ')}</p>
-              </div>
-              <button type="button" aria-label="닫기" onClick={closeInspector}>
-                ×
-              </button>
-            </div>
-
-            <dl className="relationship-config-list">
-              {inspectorData.section.columns.map((column) => (
-                <div key={column.key}>
-                  <dt>{column.label}</dt>
-                  <dd>{displayValue(inspectorData.row[column.key])}</dd>
-                </div>
-              ))}
-            </dl>
-          </>
-        )}
       </div>
     </div>
   )
