@@ -1,8 +1,10 @@
 .sidebar {
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
   z-index: 20;
-  align-self: start;
+  width: 248px;
+  box-sizing: border-box;
   height: 100vh;
   display: flex;
   flex-direction: column;
@@ -62,6 +64,7 @@
 }
 
 .sidebar-collapsed .sidebar {
+  width: 72px;
   align-items: center;
   padding-inline: 0;
 }
@@ -113,4 +116,3 @@
   background: #141516;
   color: #f7f8f8;
 }
-

@@ -9,7 +9,12 @@
 
   .sidebar {
     position: static;
+    width: auto;
     height: auto;
+  }
+
+  .workspace {
+    grid-column: 1;
   }
 
   .side-nav {
