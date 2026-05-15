@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { sectionDefinitions } from '../constants/dashboard'
+import { getTooltip } from '../constants/tooltips'
 import type { SectionDefinition, SectionKey, SectionState, TableRow, TableValue } from '../types/config'
 import { exportItemToExcel } from '../utils/exportExcel'
 
@@ -504,7 +505,9 @@ export function ConfigRelationPanel({
               <dl className="relationship-config-list">
                 {definition.columns.map((column) => (
                   <div key={column.key}>
-                    <dt>{column.label}</dt>
+                    <dt data-tooltip={getTooltip(selection.section, column.key) || undefined}>
+                      {column.label}
+                    </dt>
                     <dd>{displayValue(selection.row[column.key])}</dd>
                   </div>
                 ))}

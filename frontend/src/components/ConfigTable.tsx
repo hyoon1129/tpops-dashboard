@@ -1,5 +1,6 @@
 import { memo, useCallback, useLayoutEffect, useRef, useState } from 'react'
 import { highlightedText } from '../utils/highlight'
+import { getTooltip } from '../constants/tooltips'
 import type { Column, SectionDefinition, SectionKey, SectionState, SortState, TableRow } from '../types/config'
 
 type ConfigTableProps = {
@@ -29,14 +30,21 @@ type HeaderCellProps = {
 }
 
 function HeaderCell({ column, onSort, selectedSection, sortState }: HeaderCellProps) {
+  const tooltip = getTooltip(selectedSection, column.key)
+
   if (column.sortable === false) {
-    return <span className="sort-button">{column.label}</span>
+    return (
+      <span className="sort-button" data-tooltip={tooltip || undefined}>
+        {column.label}
+      </span>
+    )
   }
 
   return (
     <button
       type="button"
       className="sort-button"
+      data-tooltip={tooltip || undefined}
       onClick={() => onSort(column)}
     >
       <span>{column.label}</span>

@@ -9,4 +9,5 @@
 @import './styles/config-table.css';
 @import './styles/config-relation-panel.css';
 @import './styles/config-relation-service-response.css';
+@import './styles/tooltip.css';
 @import './styles/responsive.css';
