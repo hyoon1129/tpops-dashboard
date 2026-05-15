@@ -380,6 +380,12 @@ export const useConfigDashboard = () => {
     setServers((current) => current.map((item) => item.serverId === server.serverId ? server : item))
   }
 
+  const createServer = (server: ServerInfo) => {
+    setServers((current) => [...current, server])
+    setSelectedServerId(server.serverId)
+    setError(null)
+  }
+
   return {
     activeView,
     currentDefinition,
@@ -416,5 +422,6 @@ export const useConfigDashboard = () => {
     sortState,
     toggleSearchSection,
     updateSelectedServer,
+    createServer,
   }
 }

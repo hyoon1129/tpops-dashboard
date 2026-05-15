@@ -3,6 +3,7 @@ import type { ConfigFileDetail, ConfigFileHistory, ServerInfo } from '../types/c
 
 type ConfigUploadPageProps = {
   onParsed: () => Promise<void>
+  onServerCreate: (server: ServerInfo) => void
   onServerUpdate: (server: ServerInfo) => void
   selectedServer: ServerInfo | null
 }
@@ -28,7 +29,7 @@ const formatDateTime = (value: string | null) => {
   })
 }
 
-export function ConfigUploadPage({ onParsed, onServerUpdate, selectedServer }: ConfigUploadPageProps) {
+export function ConfigUploadPage({ onParsed, onServerCreate, onServerUpdate, selectedServer }: ConfigUploadPageProps) {
   const inputRef = useRef<HTMLInputElement | null>(null)
   const [serverName, setServerName] = useState(selectedServer?.serverName ?? '')
   const [environment, setEnvironment] = useState(selectedServer?.environment ?? '')
@@ -41,6 +42,10 @@ export function ConfigUploadPage({ onParsed, onServerUpdate, selectedServer }: C
   const [uploading, setUploading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [newServerName, setNewServerName] = useState('')
+  const [newServerIp, setNewServerIp] = useState('')
+  const [newEnvironment, setNewEnvironment] = useState('')
+  const [creatingServer, setCreatingServer] = useState(false)
 
   const loadHistory = useCallback(async () => {
     if (!selectedServer) {
@@ -165,8 +170,83 @@ export function ConfigUploadPage({ onParsed, onServerUpdate, selectedServer }: C
     }
   }
 
+  const createServer = async () => {
+    if (!newServerName.trim()) {
+      setError('대시보드 이름을 입력해주세요.')
+      return
+    }
+    try {
+      setCreatingServer(true)
+      setError(null)
+      const response = await fetch('/api/servers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          serverName: newServerName.trim(),
+          serverIp: newServerIp.trim() || null,
+          environment: newEnvironment.trim() || null,
+          description: null,
+        }),
+      })
+      if (!response.ok) {
+        throw new Error('서버를 등록하지 못했습니다.')
+      }
+      onServerCreate((await response.json()) as ServerInfo)
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : '알 수 없는 오류가 발생했습니다.')
+    } finally {
+      setCreatingServer(false)
+    }
+  }
+
   if (!selectedServer) {
-    return <div className="empty-state">설정 파일을 업로드할 서버가 없습니다.</div>
+    return (
+      <div className="config-upload-page">
+        <section className="upload-settings-section">
+          <div className="upload-section-header">
+            <span>NEW SERVER</span>
+            <h3>서버 등록</h3>
+            <p>설정 파일을 업로드할 서버를 먼저 등록해주세요.</p>
+          </div>
+          <div className="upload-section-row2">
+            <label htmlFor="new-server-env" className="upload-field-env">환경</label>
+            <label htmlFor="new-server-ip" className="upload-field-env">서버 IP</label>
+            <label htmlFor="new-server-name" className="upload-field-name">대시보드 이름 *</label>
+          </div>
+          <div className="upload-inline-row">
+            <input
+              id="new-server-env"
+              className="upload-field-env"
+              value={newEnvironment}
+              onChange={(e) => setNewEnvironment(e.target.value)}
+              placeholder="예: 개발"
+            />
+            <input
+              id="new-server-ip"
+              className="upload-field-env"
+              value={newServerIp}
+              onChange={(e) => setNewServerIp(e.target.value)}
+              placeholder="예: 10.0.0.1"
+            />
+            <input
+              id="new-server-name"
+              className="upload-field-name"
+              value={newServerName}
+              onChange={(e) => setNewServerName(e.target.value)}
+              placeholder="예: 계정계 테스트"
+            />
+            <button
+              type="button"
+              onClick={createServer}
+              disabled={!newServerName.trim() || creatingServer}
+            >
+              {creatingServer ? '등록 중…' : '서버 등록'}
+            </button>
+          </div>
+          {error ? <div className="upload-message error">{error}</div> : null}
+        </section>
+      </div>
+    )
   }
 
   const serverDisplayChanged = serverName.trim() !== selectedServer.serverName

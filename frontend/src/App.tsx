@@ -209,6 +209,7 @@ function App() {
             <ConfigUploadPage
               key={dashboard.selectedServerId ?? 'no-server'}
               onParsed={dashboard.reloadDashboard}
+              onServerCreate={dashboard.createServer}
               onServerUpdate={dashboard.updateSelectedServer}
               selectedServer={dashboard.selectedServer}
             />
