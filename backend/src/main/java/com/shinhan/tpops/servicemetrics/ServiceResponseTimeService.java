@@ -18,12 +18,14 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ServiceResponseTimeService {
@@ -83,8 +85,10 @@ public class ServiceResponseTimeService {
 
 			return toResponse(from, to, serviceConfigs, response);
 		} catch (ElasticsearchException exception) {
+			log.error("Elasticsearch 조회 실패: {}", exception.getMessage(), exception);
 			throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Elasticsearch 조회에 실패했습니다.", exception);
 		} catch (IOException exception) {
+			log.error("Elasticsearch 응답 처리 실패: {}", exception.getMessage(), exception);
 			throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Elasticsearch 응답을 처리하지 못했습니다.", exception);
 		}
 	}
@@ -124,8 +128,10 @@ public class ServiceResponseTimeService {
 			long documentCount = response.hits().total() == null ? 0 : response.hits().total().value();
 			return toMetric(serviceName, serviceConfig, documentCount, Optional.ofNullable(averageAggregate));
 		} catch (ElasticsearchException exception) {
+			log.error("Elasticsearch 조회 실패: {}", exception.getMessage(), exception);
 			throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Elasticsearch 조회에 실패했습니다.", exception);
 		} catch (IOException exception) {
+			log.error("Elasticsearch 응답 처리 실패: {}", exception.getMessage(), exception);
 			throw new ResponseStatusException(HttpStatus.BAD_GATEWAY, "Elasticsearch 응답을 처리하지 못했습니다.", exception);
 		}
 	}

@@ -1,0 +1,106 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tpops-backend-jhy
+  namespace: tpops-jhy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tpops-backend-jhy
+  template:
+    metadata:
+      labels:
+        app: tpops-backend-jhy
+    spec:
+      containers:
+        - name: backend
+          image: localhost:5000/tpops-backend:latest
+          imagePullPolicy: Always
+          env:
+            - name: TZ
+              value: Asia/Seoul
+            - name: SPRING_DATASOURCE_URL
+              valueFrom:
+                secretKeyRef:
+                  name: tpops-secret-jhy
+                  key: datasource-url
+            - name: SPRING_DATASOURCE_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: tpops-secret-jhy
+                  key: datasource-username
+            - name: SPRING_DATASOURCE_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: tpops-secret-jhy
+                  key: datasource-password
+            - name: JAVA_OPTS
+              value: "-Xms256m -Xmx512m"
+            - name: LOGGING_LEVEL_ROOT
+              value: "INFO"
+            - name: LOGGING_LEVEL_APP
+              value: "INFO"
+            - name: LOGGING_FILE_NAME
+              value: "/logs/tpops.log"
+            - name: SPRING_JPA_DDL_AUTO
+              value: "update"
+            - name: TPOPS_ELASTICSEARCH_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: tpops-secret-jhy
+                  key: elasticsearch-endpoint
+            - name: TPOPS_ELASTICSEARCH_API_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: tpops-secret-jhy
+                  key: elasticsearch-api-key
+            - name: TPOPS_ELASTICSEARCH_CA_CERT_PATH
+              value: "/etc/ssl/es-ca/es-ca.pem"
+            - name: TPOPS_ELASTICSEARCH_INDEX_NAME
+              value: "tp-svclog-test"
+            - name: TPOPS_ELASTICSEARCH_TIMESTAMP_FIELD
+              value: "@timestamp"
+            - name: TPOPS_ELASTICSEARCH_SERVICE_NAME_FIELD
+              value: "tp_svc_id"
+            - name: TPOPS_ELASTICSEARCH_RESPONSE_TIME_FIELD
+              value: "tp_resp_time"
+            - name: TPOPS_ELASTICSEARCH_SERVICE_BUCKET_SIZE
+              value: "10000"
+            - name: MULTIPART_MAX_FILE_SIZE
+              value: "50MB"
+            - name: MULTIPART_MAX_REQUEST_SIZE
+              value: "50MB"
+          ports:
+            - containerPort: 8080
+          volumeMounts:
+            - name: logs
+              mountPath: /logs
+            - name: es-ca
+              mountPath: /etc/ssl/es-ca
+              readOnly: true
+          readinessProbe:
+            httpGet:
+              path: /api/servers
+              port: 8080
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 6
+      volumes:
+        - name: logs
+          emptyDir: {}
+        - name: es-ca
+          secret:
+            secretName: es-ca-secret
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tpops-backend-jhy
+  namespace: tpops-jhy
+spec:
+  selector:
+    app: tpops-backend-jhy
+  ports:
+    - port: 8080
+      targetPort: 8080

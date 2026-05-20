@@ -44,11 +44,13 @@ public class ElasticsearchConfig {
 	@Primary
 	@ConditionalOnExpression(
 		"T(org.springframework.util.StringUtils).hasText('${tpops.elasticsearch.endpoint:}') " +
-		"&& T(org.springframework.util.StringUtils).hasText('${tpops.elasticsearch.ca-cert-path:}')"
+		"&& T(org.springframework.util.StringUtils).hasText('${tpops.elasticsearch.ca-cert-path:}') " +
+		"&& T(org.springframework.util.StringUtils).hasText('${tpops.elasticsearch.api-key:}')"
 	)
 	public RestClient caCertRestClient(
 		@Value("${tpops.elasticsearch.endpoint}") String endpoint,
-		@Value("${tpops.elasticsearch.ca-cert-path}") String caCertPath
+		@Value("${tpops.elasticsearch.ca-cert-path}") String caCertPath,
+		@Value("${tpops.elasticsearch.api-key}") String apiKey
 	) throws Exception {
 		CertificateFactory cf = CertificateFactory.getInstance("X.509");
 		Certificate trustedCa;
@@ -64,7 +66,9 @@ public class ElasticsearchConfig {
 			.loadTrustMaterial(trustStore, null)
 			.build();
 
+		Header[] defaultHeaders = {new BasicHeader("Authorization", "ApiKey " + apiKey)};
 		return RestClient.builder(HttpHost.create(endpoint))
+			.setDefaultHeaders(defaultHeaders)
 			.setHttpClientConfigCallback(httpClientBuilder ->
 				httpClientBuilder.setSSLContext(sslContext))
 			.build();
