@@ -232,9 +232,10 @@ function App() {
               currentDefinition={dashboard.currentDefinition}
               currentState={dashboard.currentState}
               filteredRows={dashboard.filteredRows}
+              onLoadMore={dashboard.loadMoreRows}
               onNameClick={(row) => openRelationPanel({ row, section: dashboard.selectedSection })}
               onSort={dashboard.handleSort}
-              sectionKeyword={dashboard.deferredSectionKeyword}
+              sectionKeyword={dashboard.sectionKeyword}
               selectedSection={dashboard.selectedSection}
               sortState={dashboard.sortState}
             />
@@ -270,7 +271,7 @@ function App() {
         onClose={() => setRelationPanelOpen(false)}
         onSelectRelated={handleRelationSelect}
         open={relationPanelOpen}
-        sections={dashboard.sections}
+        allRows={dashboard.relationshipRows}
         selection={relationSelection}
       />
       {relationSelection ? (

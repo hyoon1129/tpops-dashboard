@@ -10,4 +10,6 @@ public interface NodeConfigRepository extends JpaRepository<NodeConfig, Long> {
 	List<NodeConfig> findByConfigFileId(Long fileId);
 
 	Page<NodeConfig> findByConfigFileId(Long fileId, Pageable pageable);
+
+	Page<NodeConfig> findByConfigFileIdAndNodeNameContainingIgnoreCase(Long fileId, String keyword, Pageable pageable);
 }

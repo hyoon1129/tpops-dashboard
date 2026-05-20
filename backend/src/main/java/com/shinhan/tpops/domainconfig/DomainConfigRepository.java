@@ -10,4 +10,6 @@ public interface DomainConfigRepository extends JpaRepository<DomainConfig, Long
 	List<DomainConfig> findByConfigFileId(Long fileId);
 
 	Page<DomainConfig> findByConfigFileId(Long fileId, Pageable pageable);
+
+	Page<DomainConfig> findByConfigFileIdAndDomainNameContainingIgnoreCase(Long fileId, String keyword, Pageable pageable);
 }

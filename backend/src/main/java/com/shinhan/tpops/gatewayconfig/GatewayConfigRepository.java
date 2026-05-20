@@ -10,4 +10,6 @@ public interface GatewayConfigRepository extends JpaRepository<GatewayConfig, Lo
 	List<GatewayConfig> findByConfigFileId(Long fileId);
 
 	Page<GatewayConfig> findByConfigFileId(Long fileId, Pageable pageable);
+
+	Page<GatewayConfig> findByConfigFileIdAndGatewayNameContainingIgnoreCase(Long fileId, String keyword, Pageable pageable);
 }

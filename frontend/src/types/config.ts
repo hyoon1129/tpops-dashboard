@@ -49,6 +49,7 @@ export type SectionDefinition = {
   label: SectionKey
   title: string
   endpoint: string
+  pageEndpoint: string
   columns: Column[]
   toRows: (items: Array<Record<string, TableValue>>) => TableRow[]
 }
@@ -57,6 +58,7 @@ export type SectionState = {
   rows: TableRow[]
   total: number
   page: number
+  totalPages: number
   last: boolean
   loading: boolean
 }

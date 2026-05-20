@@ -10,4 +10,6 @@ public interface ServerConfigRepository extends JpaRepository<ServerConfig, Long
 	List<ServerConfig> findByConfigFileId(Long fileId);
 
 	Page<ServerConfig> findByConfigFileId(Long fileId, Pageable pageable);
+
+	Page<ServerConfig> findByConfigFileIdAndServerNameContainingIgnoreCase(Long fileId, String keyword, Pageable pageable);
 }

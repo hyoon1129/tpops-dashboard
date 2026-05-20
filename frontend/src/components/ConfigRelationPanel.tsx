@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { sectionDefinitions } from '../constants/dashboard'
 import { getTooltip } from '../constants/tooltips'
-import type { SectionDefinition, SectionKey, SectionState, TableRow, TableValue } from '../types/config'
+import type { SectionDefinition, SectionKey, TableRow, TableValue } from '../types/config'
 import { exportItemToExcel } from '../utils/exportExcel'
 
 export type ConfigRelationSelection = {
@@ -23,7 +23,7 @@ type ConfigRelationPanelProps = {
   onClose: () => void
   onSelectRelated: (item: RelationItem) => void
   open: boolean
-  sections: Record<SectionKey, SectionState>
+  allRows: Record<SectionKey, TableRow[]>
   selection: ConfigRelationSelection | null
 }
 
@@ -99,13 +99,13 @@ function childGroup(section: SectionKey, items: TableRow[]): RelationGroup | nul
   return items.length > 0 ? { section, items: items.map((row) => ({ section, row })) } : null
 }
 
-function buildRelationContext(selection: ConfigRelationSelection, sections: Record<SectionKey, SectionState>) {
-  const domains = sections.DOMAIN.rows
-  const nodes = sections.NODE.rows
-  const groups = sections.SVRGROUP.rows
-  const servers = sections.SERVER.rows
-  const services = sections.SERVICE.rows
-  const gateways = sections.GATEWAY.rows
+function buildRelationContext(selection: ConfigRelationSelection, allRows: Record<SectionKey, TableRow[]>) {
+  const domains = allRows.DOMAIN
+  const nodes = allRows.NODE
+  const groups = allRows.SVRGROUP
+  const servers = allRows.SERVER
+  const services = allRows.SERVICE
+  const gateways = allRows.GATEWAY
   const domain = domains[0] ?? null
   const { row, section } = selection
 
@@ -411,7 +411,7 @@ export function ConfigRelationPanel({
   onClose,
   onSelectRelated,
   open,
-  sections,
+  allRows,
   selection,
 }: ConfigRelationPanelProps) {
   const [tabState, setTabState] = useState<{ activeTab: RelationPanelTab; selectionKey: string }>({
@@ -422,8 +422,8 @@ export function ConfigRelationPanel({
     if (!selection) {
       return null
     }
-    return buildRelationContext(selection, sections)
-  }, [sections, selection])
+    return buildRelationContext(selection, allRows)
+  }, [allRows, selection])
 
   if (!selection || !context) {
     return null

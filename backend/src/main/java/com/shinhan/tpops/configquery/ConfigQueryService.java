@@ -43,10 +43,13 @@ public class ConfigQueryService {
 	}
 
 	@Transactional(readOnly = true)
-	public PageResponse<DomainConfigResponse> findDomains(Long serverId, int page, int size, String sort, Sort.Direction direction) {
+	public PageResponse<DomainConfigResponse> findDomains(Long serverId, int page, int size, String sort, Sort.Direction direction, String keyword) {
 		ConfigFile configFile = findCurrentConfigFileEntity(serverId);
-		return PageResponse.from(domainConfigRepository.findByConfigFileId(configFile.getId(), pageRequest(page, size, sort, direction))
-			.map(DomainConfigResponse::from));
+		PageRequest pr = pageRequest(page, size, sort, direction);
+		var result = (keyword != null && !keyword.isBlank())
+			? domainConfigRepository.findByConfigFileIdAndDomainNameContainingIgnoreCase(configFile.getId(), keyword, pr)
+			: domainConfigRepository.findByConfigFileId(configFile.getId(), pr);
+		return PageResponse.from(result.map(DomainConfigResponse::from));
 	}
 
 	@Transactional(readOnly = true)
@@ -58,10 +61,13 @@ public class ConfigQueryService {
 	}
 
 	@Transactional(readOnly = true)
-	public PageResponse<NodeConfigResponse> findNodes(Long serverId, int page, int size, String sort, Sort.Direction direction) {
+	public PageResponse<NodeConfigResponse> findNodes(Long serverId, int page, int size, String sort, Sort.Direction direction, String keyword) {
 		ConfigFile configFile = findCurrentConfigFileEntity(serverId);
-		return PageResponse.from(nodeConfigRepository.findByConfigFileId(configFile.getId(), pageRequest(page, size, sort, direction))
-			.map(NodeConfigResponse::from));
+		PageRequest pr = pageRequest(page, size, sort, direction);
+		var result = (keyword != null && !keyword.isBlank())
+			? nodeConfigRepository.findByConfigFileIdAndNodeNameContainingIgnoreCase(configFile.getId(), keyword, pr)
+			: nodeConfigRepository.findByConfigFileId(configFile.getId(), pr);
+		return PageResponse.from(result.map(NodeConfigResponse::from));
 	}
 
 	@Transactional(readOnly = true)
@@ -73,10 +79,13 @@ public class ConfigQueryService {
 	}
 
 	@Transactional(readOnly = true)
-	public PageResponse<SvrgroupConfigResponse> findSvrgroups(Long serverId, int page, int size, String sort, Sort.Direction direction) {
+	public PageResponse<SvrgroupConfigResponse> findSvrgroups(Long serverId, int page, int size, String sort, Sort.Direction direction, String keyword) {
 		ConfigFile configFile = findCurrentConfigFileEntity(serverId);
-		return PageResponse.from(svrgroupConfigRepository.findByConfigFileId(configFile.getId(), pageRequest(page, size, sort, direction))
-			.map(SvrgroupConfigResponse::from));
+		PageRequest pr = pageRequest(page, size, sort, direction);
+		var result = (keyword != null && !keyword.isBlank())
+			? svrgroupConfigRepository.findByConfigFileIdAndSvrgroupNameContainingIgnoreCase(configFile.getId(), keyword, pr)
+			: svrgroupConfigRepository.findByConfigFileId(configFile.getId(), pr);
+		return PageResponse.from(result.map(SvrgroupConfigResponse::from));
 	}
 
 	@Transactional(readOnly = true)
@@ -88,10 +97,13 @@ public class ConfigQueryService {
 	}
 
 	@Transactional(readOnly = true)
-	public PageResponse<ServerConfigResponse> findServerConfigs(Long serverId, int page, int size, String sort, Sort.Direction direction) {
+	public PageResponse<ServerConfigResponse> findServerConfigs(Long serverId, int page, int size, String sort, Sort.Direction direction, String keyword) {
 		ConfigFile configFile = findCurrentConfigFileEntity(serverId);
-		return PageResponse.from(serverConfigRepository.findByConfigFileId(configFile.getId(), pageRequest(page, size, sort, direction))
-			.map(ServerConfigResponse::from));
+		PageRequest pr = pageRequest(page, size, sort, direction);
+		var result = (keyword != null && !keyword.isBlank())
+			? serverConfigRepository.findByConfigFileIdAndServerNameContainingIgnoreCase(configFile.getId(), keyword, pr)
+			: serverConfigRepository.findByConfigFileId(configFile.getId(), pr);
+		return PageResponse.from(result.map(ServerConfigResponse::from));
 	}
 
 	@Transactional(readOnly = true)
@@ -103,10 +115,13 @@ public class ConfigQueryService {
 	}
 
 	@Transactional(readOnly = true)
-	public PageResponse<ServiceConfigResponse> findServices(Long serverId, int page, int size, String sort, Sort.Direction direction) {
+	public PageResponse<ServiceConfigResponse> findServices(Long serverId, int page, int size, String sort, Sort.Direction direction, String keyword) {
 		ConfigFile configFile = findCurrentConfigFileEntity(serverId);
-		return PageResponse.from(serviceConfigRepository.findByConfigFileId(configFile.getId(), pageRequest(page, size, sort, direction))
-			.map(ServiceConfigResponse::from));
+		PageRequest pr = pageRequest(page, size, sort, direction);
+		var result = (keyword != null && !keyword.isBlank())
+			? serviceConfigRepository.findByConfigFileIdAndServiceNameContainingIgnoreCase(configFile.getId(), keyword, pr)
+			: serviceConfigRepository.findByConfigFileId(configFile.getId(), pr);
+		return PageResponse.from(result.map(ServiceConfigResponse::from));
 	}
 
 	@Transactional(readOnly = true)
@@ -118,10 +133,13 @@ public class ConfigQueryService {
 	}
 
 	@Transactional(readOnly = true)
-	public PageResponse<GatewayConfigResponse> findGateways(Long serverId, int page, int size, String sort, Sort.Direction direction) {
+	public PageResponse<GatewayConfigResponse> findGateways(Long serverId, int page, int size, String sort, Sort.Direction direction, String keyword) {
 		ConfigFile configFile = findCurrentConfigFileEntity(serverId);
-		return PageResponse.from(gatewayConfigRepository.findByConfigFileId(configFile.getId(), pageRequest(page, size, sort, direction))
-			.map(GatewayConfigResponse::from));
+		PageRequest pr = pageRequest(page, size, sort, direction);
+		var result = (keyword != null && !keyword.isBlank())
+			? gatewayConfigRepository.findByConfigFileIdAndGatewayNameContainingIgnoreCase(configFile.getId(), keyword, pr)
+			: gatewayConfigRepository.findByConfigFileId(configFile.getId(), pr);
+		return PageResponse.from(result.map(GatewayConfigResponse::from));
 	}
 
 	private ConfigFile findCurrentConfigFileEntity(Long serverId) {

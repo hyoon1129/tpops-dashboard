@@ -1,4 +1,4 @@
-import { useCallback, useDeferredValue, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   initialSearchRows,
   initialSections,
@@ -14,9 +14,10 @@ import type {
   SectionKey,
   ServerInfo,
   SortState,
-  TableRow,
   TableValue,
 } from '../types/config'
+
+const PAGE_SIZE = 200
 
 export const useConfigDashboard = () => {
   const [servers, setServers] = useState<ServerInfo[]>([])
@@ -45,9 +46,10 @@ export const useConfigDashboard = () => {
   const [expandedSearchSections, setExpandedSearchSections] = useState<Set<SectionKey>>(() => new Set())
   const [relationshipRows, setRelationshipRows] = useState(initialSearchRows)
 
+  const keywordTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   const currentDefinition = sectionDefinitions.find((section) => section.label === selectedSection) ?? sectionDefinitions[0]
   const currentState = sections[selectedSection]
-  const deferredSectionKeyword = useDeferredValue(sectionKeyword)
   const selectedServer = servers.find((server) => server.serverId === selectedServerId) ?? null
   const isGlobalSearch = globalKeyword.trim().length > 0
   const searchResultsBySection = useMemo(() =>
@@ -96,6 +98,7 @@ export const useConfigDashboard = () => {
     }))
   }, [relationshipRows])
 
+  // Load full (non-paginated) rows — used for relationshipRows, tree, global search
   const loadSectionRows = useCallback(async (
     definition: SectionDefinition,
     signal?: AbortSignal,
@@ -113,10 +116,56 @@ export const useConfigDashboard = () => {
     return definition.toRows(data)
   }, [selectedServerId])
 
-  const reloadDashboard = useCallback(async (signal?: AbortSignal) => {
-    if (selectedServerId === null) {
-      return
+  // Fetch one page from the server
+  const fetchPage = useCallback(async (
+    definition: SectionDefinition,
+    page: number,
+    sort: string,
+    direction: 'asc' | 'desc',
+    keyword: string,
+    signal?: AbortSignal,
+  ) => {
+    if (selectedServerId === null) return null
+
+    const params = new URLSearchParams({
+      page: String(page),
+      size: String(PAGE_SIZE),
+      sort,
+      direction: direction.toUpperCase(),
+    })
+    if (keyword.trim()) {
+      params.set('keyword', keyword.trim())
     }
+
+    const response = await fetch(
+      `/api/servers/${selectedServerId}/${definition.pageEndpoint}?${params.toString()}`,
+      { signal },
+    )
+    if (!response.ok) {
+      throw new Error(`${definition.title} 설정을 불러오지 못했습니다.`)
+    }
+
+    const data = (await response.json()) as {
+      content: Array<Record<string, TableValue>>
+      page: number
+      size: number
+      totalElements: number
+      totalPages: number
+      first: boolean
+      last: boolean
+    }
+
+    return {
+      rows: definition.toRows(data.content),
+      total: data.totalElements,
+      page: data.page,
+      totalPages: data.totalPages,
+      last: data.last,
+    }
+  }, [selectedServerId])
+
+  const reloadDashboard = useCallback(async (signal?: AbortSignal) => {
+    if (selectedServerId === null) return
 
     setInitialDataLoading(true)
     setSections((current) =>
@@ -126,50 +175,46 @@ export const useConfigDashboard = () => {
       }, { ...current }),
     )
 
-    const nextRows = initialSearchRows()
+    const nextRelationshipRows = initialSearchRows()
     const nextSections = initialSections()
+
     await Promise.all(sectionDefinitions.map(async (section) => {
-      const rows = await loadSectionRows(section, signal)
-      nextRows[section.label] = rows
-      nextSections[section.label] = {
-        rows,
-        total: rows.length,
-        page: 0,
-        last: true,
-        loading: false,
+      const [allRows, pageResult] = await Promise.all([
+        loadSectionRows(section, signal),
+        fetchPage(section, 0, 'id', 'asc', '', signal),
+      ])
+      nextRelationshipRows[section.label] = allRows
+
+      if (pageResult) {
+        nextSections[section.label] = {
+          rows: pageResult.rows,
+          total: pageResult.total,
+          page: pageResult.page,
+          totalPages: pageResult.totalPages,
+          last: pageResult.last,
+          loading: false,
+        }
+      } else {
+        nextSections[section.label] = {
+          rows: allRows,
+          total: allRows.length,
+          page: 0,
+          totalPages: 1,
+          last: true,
+          loading: false,
+        }
       }
     }))
 
     setSections(nextSections)
-    setRelationshipRows(nextRows)
+    setRelationshipRows(nextRelationshipRows)
     setSearchResults([])
     setSearchRowsBySection(initialSearchRows())
     setExpandedSearchSections(new Set())
     setSortState(null)
     setError(null)
     setInitialDataLoading(false)
-  }, [loadSectionRows, selectedServerId])
-
-  const compareRows = useCallback((column: Column, direction: SortState['direction']) => (left: TableRow, right: TableRow) => {
-    const leftValue = left[column.key]
-    const rightValue = right[column.key]
-
-    if (leftValue == null && rightValue == null) {
-      return 0
-    }
-    if (leftValue == null) {
-      return direction === 'asc' ? 1 : -1
-    }
-    if (rightValue == null) {
-      return direction === 'asc' ? -1 : 1
-    }
-
-    const result = typeof leftValue === 'number' && typeof rightValue === 'number'
-      ? leftValue - rightValue
-      : String(leftValue).localeCompare(String(rightValue), 'ko', { numeric: true, sensitivity: 'base' })
-
-    return direction === 'asc' ? result : -result
-  }, [])
+  }, [loadSectionRows, fetchPage, selectedServerId])
 
   useEffect(() => {
     let ignore = false
@@ -186,9 +231,7 @@ export const useConfigDashboard = () => {
           setServers(data)
           setSelectedServerId((serverId) => serverId ?? data[0]?.serverId ?? null)
           setError(data.length === 0 ? '조회할 서버가 없습니다.' : null)
-          if (data.length === 0) {
-            setInitialDataLoading(false)
-          }
+          if (data.length === 0) setInitialDataLoading(false)
         }
       } catch (caught) {
         if (!ignore) {
@@ -196,23 +239,16 @@ export const useConfigDashboard = () => {
           setInitialDataLoading(false)
         }
       } finally {
-        if (!ignore) {
-          setLoadingServers(false)
-        }
+        if (!ignore) setLoadingServers(false)
       }
     }
 
     loadServers()
-
-    return () => {
-      ignore = true
-    }
+    return () => { ignore = true }
   }, [])
 
   useEffect(() => {
-    if (selectedServerId === null) {
-      return
-    }
+    if (selectedServerId === null) return
 
     const controller = new AbortController()
 
@@ -234,14 +270,12 @@ export const useConfigDashboard = () => {
     }
 
     loadSections()
-
     return () => controller.abort()
   }, [reloadDashboard, selectedServerId])
 
+  // Global keyword search
   useEffect(() => {
-    if (selectedServerId === null || !globalKeyword.trim()) {
-      return
-    }
+    if (selectedServerId === null || !globalKeyword.trim()) return
 
     const controller = new AbortController()
     const timer = window.setTimeout(async () => {
@@ -251,9 +285,8 @@ export const useConfigDashboard = () => {
         const response = await fetch(`/api/servers/${selectedServerId}/search?${params.toString()}`, {
           signal: controller.signal,
         })
-        if (!response.ok) {
-          throw new Error('검색 결과를 불러오지 못했습니다.')
-        }
+        if (!response.ok) throw new Error('검색 결과를 불러오지 못했습니다.')
+
         const results = (await response.json()) as SearchResult[]
         const nextSearchRows = initialSearchRows()
 
@@ -263,11 +296,9 @@ export const useConfigDashboard = () => {
               .filter((result) => result.section === section.label)
               .map((result) => result.name),
           )
-          if (matchedNames.size === 0) {
-            return
-          }
+          if (matchedNames.size === 0) return
 
-          nextSearchRows[section.label] = sections[section.label].rows
+          nextSearchRows[section.label] = relationshipRows[section.label]
             .filter((row) => matchedNames.has(String(row.NAME ?? '')))
         }))
 
@@ -279,9 +310,7 @@ export const useConfigDashboard = () => {
           setError(caught instanceof Error ? caught.message : '알 수 없는 오류가 발생했습니다.')
         }
       } finally {
-        if (!controller.signal.aborted) {
-          setSearchLoading(false)
-        }
+        if (!controller.signal.aborted) setSearchLoading(false)
       }
     }, 300)
 
@@ -289,21 +318,116 @@ export const useConfigDashboard = () => {
       controller.abort()
       window.clearTimeout(timer)
     }
-  }, [globalKeyword, sections, selectedServerId])
+  }, [globalKeyword, relationshipRows, selectedServerId])
 
-  const filteredRows = useMemo(() => {
-    const normalizedKeyword = deferredSectionKeyword.trim().toLowerCase()
-    if (!normalizedKeyword) {
-      return currentState.rows
+  // Debounced section keyword → reset rows and load page 0 from server
+  useEffect(() => {
+    if (selectedServerId === null) return
+
+    if (keywordTimerRef.current !== null) clearTimeout(keywordTimerRef.current)
+
+    const controller = new AbortController()
+
+    keywordTimerRef.current = setTimeout(async () => {
+      const currentSort = sortState?.section === selectedSection ? sortState : null
+      setSections((current) => ({
+        ...current,
+        [selectedSection]: { ...current[selectedSection], rows: [], page: -1, loading: true },
+      }))
+      try {
+        const result = await fetchPage(
+          currentDefinition,
+          0,
+          currentSort?.key ?? 'id',
+          currentSort?.direction ?? 'asc',
+          sectionKeyword,
+          controller.signal,
+        )
+        if (result && !controller.signal.aborted) {
+          setSections((current) => ({
+            ...current,
+            [selectedSection]: {
+              ...current[selectedSection],
+              rows: result.rows,
+              total: result.total,
+              page: result.page,
+              totalPages: result.totalPages,
+              last: result.last,
+              loading: false,
+            },
+          }))
+        }
+      } catch {
+        if (!controller.signal.aborted) {
+          setSections((current) => ({
+            ...current,
+            [selectedSection]: { ...current[selectedSection], loading: false },
+          }))
+        }
+      }
+    }, 300)
+
+    return () => {
+      if (keywordTimerRef.current !== null) clearTimeout(keywordTimerRef.current)
+      controller.abort()
     }
-    return currentState.rows.filter((row) =>
-      currentDefinition.columns.some((column) =>
-        String(row[column.key] ?? '').toLowerCase().includes(normalizedKeyword),
-      ),
-    )
-  }, [currentDefinition.columns, currentState.rows, deferredSectionKeyword])
+  }, [sectionKeyword, selectedSection, selectedServerId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const handleSort = useCallback((column: Column) => {
+  // Append next page (called by infinite scroll sentinel).
+  // Reads page/last from functional setter to avoid stale closure — sections not in deps.
+  const loadMoreRows = useCallback(async () => {
+    let nextPage = -1
+    let alreadyLast = false
+    let currentSortKey = 'id'
+    let currentSortDir: 'asc' | 'desc' = 'asc'
+
+    setSections((current) => {
+      const state = current[selectedSection]
+      if (state.loading || state.last) {
+        alreadyLast = true
+        return current
+      }
+      nextPage = state.page + 1
+      return { ...current, [selectedSection]: { ...state, loading: true } }
+    })
+
+    if (alreadyLast || nextPage < 0) return
+
+    const currentSort = sortState?.section === selectedSection ? sortState : null
+    currentSortKey = currentSort?.key ?? 'id'
+    currentSortDir = currentSort?.direction ?? 'asc'
+
+    try {
+      const result = await fetchPage(
+        currentDefinition,
+        nextPage,
+        currentSortKey,
+        currentSortDir,
+        sectionKeyword,
+      )
+      if (result) {
+        setSections((current) => ({
+          ...current,
+          [selectedSection]: {
+            ...current[selectedSection],
+            rows: [...current[selectedSection].rows, ...result.rows],
+            total: result.total,
+            page: result.page,
+            totalPages: result.totalPages,
+            last: result.last,
+            loading: false,
+          },
+        }))
+      }
+    } catch {
+      setSections((current) => ({
+        ...current,
+        [selectedSection]: { ...current[selectedSection], loading: false },
+      }))
+    }
+  }, [currentDefinition, fetchPage, sectionKeyword, selectedSection, sortState])
+
+  const handleSort = useCallback(async (column: Column) => {
     const nextDirection = sortState?.section === selectedSection && sortState.key === column.sortKey && sortState.direction === 'asc'
       ? 'desc'
       : 'asc'
@@ -313,15 +437,43 @@ export const useConfigDashboard = () => {
       direction: nextDirection,
     }
     setSortState(nextSortState)
-    setSectionKeyword('')
+    if (selectedServerId === null) return
+
+    // Reset rows and load page 0 with new sort
     setSections((current) => ({
       ...current,
-      [selectedSection]: {
-        ...current[selectedSection],
-        rows: [...current[selectedSection].rows].sort(compareRows(column, nextDirection)),
-      },
+      [selectedSection]: { ...current[selectedSection], rows: [], page: -1, loading: true },
     }))
-  }, [compareRows, selectedSection, sortState])
+
+    try {
+      const result = await fetchPage(
+        currentDefinition,
+        0,
+        column.sortKey,
+        nextDirection,
+        sectionKeyword,
+      )
+      if (result) {
+        setSections((current) => ({
+          ...current,
+          [selectedSection]: {
+            ...current[selectedSection],
+            rows: result.rows,
+            total: result.total,
+            page: result.page,
+            totalPages: result.totalPages,
+            last: result.last,
+            loading: false,
+          },
+        }))
+      }
+    } catch {
+      setSections((current) => ({
+        ...current,
+        [selectedSection]: { ...current[selectedSection], loading: false },
+      }))
+    }
+  }, [currentDefinition, fetchPage, sectionKeyword, selectedSection, selectedServerId, sortState])
 
   const handleServerChange = (serverId: number) => {
     setSelectedServerId(serverId)
@@ -353,11 +505,8 @@ export const useConfigDashboard = () => {
   const toggleSearchSection = (section: SectionKey) => {
     setExpandedSearchSections((current) => {
       const next = new Set(current)
-      if (next.has(section)) {
-        next.delete(section)
-      } else {
-        next.add(section)
-      }
+      if (next.has(section)) next.delete(section)
+      else next.add(section)
       return next
     })
   }
@@ -392,7 +541,7 @@ export const useConfigDashboard = () => {
     currentState,
     error,
     expandedSearchSections,
-    filteredRows,
+    filteredRows: currentState.rows,
     globalKeyword,
     globalSearchRowTotal,
     handleGlobalKeywordChange,
@@ -401,13 +550,14 @@ export const useConfigDashboard = () => {
     isGlobalSearch,
     initialDataLoading,
     loadingServers,
+    loadMoreRows,
     relationshipLoading: false,
+    relationshipRows,
     relationshipTree,
     reloadDashboard,
     searchLoading,
     searchResults,
     searchResultsBySection,
-    deferredSectionKeyword,
     sectionKeyword,
     sections,
     selectSection,

@@ -104,6 +104,7 @@ export const sectionDefinitions: SectionDefinition[] = [
     label: 'DOMAIN',
     title: '도메인',
     endpoint: 'domains',
+    pageEndpoint: 'domains/page',
     columns: columns([
       'NAME', 'domainId', 'minclh', 'maxclh', 'tportno', 'racport', 'shmkey', 'maxuser',
       'blocktime', 'maxsvg', 'maxsvr', 'maxspr', 'maxsvc', 'maxsacall', 'maxcacall',
@@ -116,6 +117,7 @@ export const sectionDefinitions: SectionDefinition[] = [
     label: 'NODE',
     title: '노드',
     endpoint: 'nodes',
+    pageEndpoint: 'nodes/page',
     columns: columns([
       'NAME', 'hostname', 'tmaxdir', 'appdir', 'tmaxhome', 'pathdir', 'tlogdir', 'ulogdir',
       'slogdir', 'nodetype', 'autobackup', 'maxgwcpc', 'maxgwsvr', 'clhopt',
@@ -126,6 +128,7 @@ export const sectionDefinitions: SectionDefinition[] = [
     label: 'SVRGROUP',
     title: '서버 그룹',
     endpoint: 'svrgroups',
+    pageEndpoint: 'svrgroups/page',
     columns: columns([
       'NAME', 'nodename', 'cousin', 'loadValue', 'backup', 'envfile',
     ], { NAME: 'svrgroupName' }).map((col) => col.key === 'nodename' ? { ...col, badge: true } : col),
@@ -135,6 +138,7 @@ export const sectionDefinitions: SectionDefinition[] = [
     label: 'SERVER',
     title: '서버',
     endpoint: 'server-configs',
+    pageEndpoint: 'server-configs/page',
     columns: [
       ...columns(['NAME', 'svgname'], { NAME: 'serverName' }),
       { key: 'dbInfo', label: 'DB', sortKey: 'dbInfo', badge: true },
@@ -149,6 +153,7 @@ export const sectionDefinitions: SectionDefinition[] = [
     label: 'SERVICE',
     title: '서비스',
     endpoint: 'services',
+    pageEndpoint: 'services/page',
     columns: columns([
       'NAME', 'businessName', 'svrname', 'svctime',
     ], { NAME: 'serviceName', businessName: 'businessCode.businessName' }, { businessName: '업무' }),
@@ -163,6 +168,7 @@ export const sectionDefinitions: SectionDefinition[] = [
     label: 'GATEWAY',
     title: '게이트웨이',
     endpoint: 'gateways',
+    pageEndpoint: 'gateways/page',
     columns: columns([
       'NAME', 'gwtype', 'nodename', 'portno', 'rgwportno', 'rgwaddr', 'cpc',
       'loadValue', 'backupRgwaddr', 'backupRgwportno', 'clopt',
@@ -173,7 +179,7 @@ export const sectionDefinitions: SectionDefinition[] = [
 
 export const initialSections = () =>
   sectionDefinitions.reduce<Record<SectionKey, SectionState>>((states, section) => {
-    states[section.label] = { rows: [], total: 0, page: -1, last: false, loading: false }
+    states[section.label] = { rows: [], total: 0, page: -1, totalPages: 0, last: false, loading: false }
     return states
   }, {} as Record<SectionKey, SectionState>)
 

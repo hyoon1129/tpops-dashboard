@@ -14,6 +14,8 @@ public interface ServiceConfigRepository extends JpaRepository<ServiceConfig, Lo
 
 	Page<ServiceConfig> findByConfigFileId(Long fileId, Pageable pageable);
 
+	Page<ServiceConfig> findByConfigFileIdAndServiceNameContainingIgnoreCase(Long fileId, String keyword, Pageable pageable);
+
 	List<ServiceConfig> findByServiceNameIn(Collection<String> serviceNames);
 
 	@Query("SELECT s FROM ServiceConfig s LEFT JOIN FETCH s.businessCode")

@@ -10,4 +10,6 @@ public interface SvrgroupConfigRepository extends JpaRepository<SvrgroupConfig, 
 	List<SvrgroupConfig> findByConfigFileId(Long fileId);
 
 	Page<SvrgroupConfig> findByConfigFileId(Long fileId, Pageable pageable);
+
+	Page<SvrgroupConfig> findByConfigFileIdAndSvrgroupNameContainingIgnoreCase(Long fileId, String keyword, Pageable pageable);
 }

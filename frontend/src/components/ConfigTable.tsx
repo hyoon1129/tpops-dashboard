@@ -1,4 +1,6 @@
-import { memo, useCallback, useLayoutEffect, useRef, useState } from 'react'
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+
+const PAGE_SIZE = 200
 import { highlightedText } from '../utils/highlight'
 import { getTooltip } from '../constants/tooltips'
 import type { Column, SectionDefinition, SectionKey, SectionState, SortState, TableRow } from '../types/config'
@@ -7,6 +9,7 @@ type ConfigTableProps = {
   currentDefinition: SectionDefinition
   currentState: SectionState
   filteredRows: TableRow[]
+  onLoadMore: () => void
   onNameClick: (row: TableRow) => void
   onSort: (column: Column) => void
   sectionKeyword: string
@@ -61,6 +64,7 @@ export const ConfigTable = memo(function ConfigTable({
   currentDefinition,
   currentState,
   filteredRows,
+  onLoadMore,
   onNameClick,
   onSort,
   sectionKeyword,
@@ -69,15 +73,14 @@ export const ConfigTable = memo(function ConfigTable({
 }: ConfigTableProps) {
   const tableScrollRef = useRef<HTMLDivElement>(null)
   const tableRef = useRef<HTMLTableElement>(null)
+  const sentinelRef = useRef<HTMLDivElement>(null)
   const [scrollLeft, setScrollLeft] = useState(0)
   const [tableWidth, setTableWidth] = useState(0)
   const [columnWidths, setColumnWidths] = useState<number[]>([])
 
   const measureColumns = useCallback(() => {
     const table = tableRef.current
-    if (!table) {
-      return
-    }
+    if (!table) return
 
     const firstRowCells = Array.from(table.querySelectorAll<HTMLTableCellElement>('tbody tr:first-child td'))
     const nextColumnWidths = firstRowCells.map((cell) => cell.getBoundingClientRect().width)
@@ -89,9 +92,7 @@ export const ConfigTable = memo(function ConfigTable({
     measureColumns()
 
     const resizeObserver = new ResizeObserver(measureColumns)
-    if (tableRef.current) {
-      resizeObserver.observe(tableRef.current)
-    }
+    if (tableRef.current) resizeObserver.observe(tableRef.current)
     window.addEventListener('resize', measureColumns)
 
     return () => {
@@ -99,6 +100,34 @@ export const ConfigTable = memo(function ConfigTable({
       window.removeEventListener('resize', measureColumns)
     }
   }, [currentDefinition.columns, filteredRows, measureColumns])
+
+  // Keep onLoadMore in a ref so the observer never needs to reconnect when the callback changes
+  const onLoadMoreRef = useRef(onLoadMore)
+  useEffect(() => { onLoadMoreRef.current = onLoadMore }, [onLoadMore])
+
+  // Ref to guard against duplicate calls before React state update is committed
+  const isLoadingRef = useRef(false)
+  useEffect(() => { isLoadingRef.current = currentState.loading }, [currentState.loading])
+
+  // IntersectionObserver on sentinel div — fires onLoadMore when scrolled near bottom.
+  // root: null = viewport (table-scroll is overflow-y: clip, not a scroll container)
+  useEffect(() => {
+    const sentinel = sentinelRef.current
+    if (!sentinel || currentState.last) return
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && !isLoadingRef.current) {
+          isLoadingRef.current = true // lock synchronously before async state update
+          onLoadMoreRef.current()
+        }
+      },
+      { root: null, rootMargin: '0px 0px 300px 0px', threshold: 0 },
+    )
+
+    observer.observe(sentinel)
+    return () => observer.disconnect()
+  }, [currentState.last]) // deps: only last — callback is stable via ref
 
   return (
     <div className={`table-shell table-section-${selectedSection.toLowerCase()}`}>
@@ -191,9 +220,26 @@ export const ConfigTable = memo(function ConfigTable({
             ))}
           </tbody>
         </table>
-        {currentState.loading ? <div className="empty-state">데이터를 불러오는 중입니다.</div> : null}
-        {!currentState.loading && filteredRows.length === 0 ? <div className="empty-state">표시할 데이터가 없습니다.</div> : null}
+
+        {/* Sentinel div — IntersectionObserver target for infinite scroll */}
+        <div ref={sentinelRef} className="scroll-sentinel" aria-hidden="true" />
+
+        {currentState.loading ? (
+          <div className="empty-state infinite-scroll-loading">
+            <span className="loading-spinner" />
+            불러오는 중...
+          </div>
+        ) : null}
+        {!currentState.loading && filteredRows.length === 0 ? (
+          <div className="empty-state">표시할 데이터가 없습니다.</div>
+        ) : null}
+        {!currentState.loading && currentState.last && currentState.total > PAGE_SIZE ? (
+          <div className="scroll-end-marker">
+            총 {currentState.total.toLocaleString()}건
+          </div>
+        ) : null}
       </div>
     </div>
   )
 })
+

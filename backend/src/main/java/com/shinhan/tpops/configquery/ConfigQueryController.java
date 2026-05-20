@@ -32,9 +32,10 @@ public class ConfigQueryController {
 		@RequestParam(defaultValue = "0") int page,
 		@RequestParam(defaultValue = "100") int size,
 		@RequestParam(defaultValue = "id") String sort,
-		@RequestParam(defaultValue = "ASC") Sort.Direction direction
+		@RequestParam(defaultValue = "ASC") Sort.Direction direction,
+		@RequestParam(required = false) String keyword
 	) {
-		return configQueryService.findDomains(serverId, page, size, sort, direction);
+		return configQueryService.findDomains(serverId, page, size, sort, direction, keyword);
 	}
 
 	@GetMapping("/nodes")
@@ -48,9 +49,10 @@ public class ConfigQueryController {
 		@RequestParam(defaultValue = "0") int page,
 		@RequestParam(defaultValue = "100") int size,
 		@RequestParam(defaultValue = "id") String sort,
-		@RequestParam(defaultValue = "ASC") Sort.Direction direction
+		@RequestParam(defaultValue = "ASC") Sort.Direction direction,
+		@RequestParam(required = false) String keyword
 	) {
-		return configQueryService.findNodes(serverId, page, size, sort, direction);
+		return configQueryService.findNodes(serverId, page, size, sort, direction, keyword);
 	}
 
 	@GetMapping("/svrgroups")
@@ -64,9 +66,10 @@ public class ConfigQueryController {
 		@RequestParam(defaultValue = "0") int page,
 		@RequestParam(defaultValue = "100") int size,
 		@RequestParam(defaultValue = "id") String sort,
-		@RequestParam(defaultValue = "ASC") Sort.Direction direction
+		@RequestParam(defaultValue = "ASC") Sort.Direction direction,
+		@RequestParam(required = false) String keyword
 	) {
-		return configQueryService.findSvrgroups(serverId, page, size, sort, direction);
+		return configQueryService.findSvrgroups(serverId, page, size, sort, direction, keyword);
 	}
 
 	@GetMapping("/server-configs")
@@ -80,9 +83,10 @@ public class ConfigQueryController {
 		@RequestParam(defaultValue = "0") int page,
 		@RequestParam(defaultValue = "100") int size,
 		@RequestParam(defaultValue = "id") String sort,
-		@RequestParam(defaultValue = "ASC") Sort.Direction direction
+		@RequestParam(defaultValue = "ASC") Sort.Direction direction,
+		@RequestParam(required = false) String keyword
 	) {
-		return configQueryService.findServerConfigs(serverId, page, size, sort, direction);
+		return configQueryService.findServerConfigs(serverId, page, size, sort, direction, keyword);
 	}
 
 	@GetMapping("/services")
@@ -96,9 +100,10 @@ public class ConfigQueryController {
 		@RequestParam(defaultValue = "0") int page,
 		@RequestParam(defaultValue = "100") int size,
 		@RequestParam(defaultValue = "id") String sort,
-		@RequestParam(defaultValue = "ASC") Sort.Direction direction
+		@RequestParam(defaultValue = "ASC") Sort.Direction direction,
+		@RequestParam(required = false) String keyword
 	) {
-		return configQueryService.findServices(serverId, page, size, sort, direction);
+		return configQueryService.findServices(serverId, page, size, sort, direction, keyword);
 	}
 
 	@GetMapping("/gateways")
@@ -112,8 +117,9 @@ public class ConfigQueryController {
 		@RequestParam(defaultValue = "0") int page,
 		@RequestParam(defaultValue = "100") int size,
 		@RequestParam(defaultValue = "id") String sort,
-		@RequestParam(defaultValue = "ASC") Sort.Direction direction
+		@RequestParam(defaultValue = "ASC") Sort.Direction direction,
+		@RequestParam(required = false) String keyword
 	) {
-		return configQueryService.findGateways(serverId, page, size, sort, direction);
+		return configQueryService.findGateways(serverId, page, size, sort, direction, keyword);
 	}
 }
