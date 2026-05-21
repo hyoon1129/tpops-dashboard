@@ -18,7 +18,7 @@ public interface ServiceConfigRepository extends JpaRepository<ServiceConfig, Lo
 
 	List<ServiceConfig> findByServiceNameIn(Collection<String> serviceNames);
 
-	@Query("SELECT s FROM ServiceConfig s LEFT JOIN FETCH s.businessCode")
+	@Query("SELECT s FROM ServiceConfig s LEFT JOIN FETCH s.businessCode WHERE s.configFile.current = true")
 	List<ServiceConfig> findAllWithBusinessCode();
 
 	@Query("SELECT s FROM ServiceConfig s LEFT JOIN FETCH s.businessCode WHERE s.serviceName = :serviceName")
