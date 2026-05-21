@@ -154,7 +154,7 @@ export const ConfigTable = memo(function ConfigTable({
             style={{
               gridTemplateColumns: columnWidths.length === currentDefinition.columns.length
                 ? columnWidths.slice(1).map((width) => `${width}px`).join(' ')
-                : undefined,
+                : `repeat(${currentDefinition.columns.length - 1}, 1fr)`,
               transform: `translateX(${-scrollLeft}px)`,
               width: tableWidth && columnWidths[0] ? tableWidth - columnWidths[0] : undefined,
             }}

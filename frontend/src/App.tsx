@@ -76,7 +76,7 @@ function App() {
   }
 
   const handleServiceMetricClick = (serviceName: string) => {
-    const row = dashboard.sections.SERVICE.rows.find((r) => String(r.NAME ?? '') === serviceName)
+    const row = dashboard.relationshipRows.SERVICE.find((r) => String(r.NAME ?? '') === serviceName)
     openRelationPanel({ section: 'SERVICE', row: row ?? { NAME: serviceName } })
   }
 
