@@ -195,7 +195,7 @@ function App() {
           {!dashboard.error && !dashboard.loadingServers && dashboard.activeView === '구성 트리' ? (
             <RelationshipMap
               itemToSelect={treeItemToSelect}
-              loading={dashboard.relationshipLoading}
+              loading={dashboard.initialDataLoading}
               onInspect={handleTreeInspect}
               tree={dashboard.relationshipTree}
             />

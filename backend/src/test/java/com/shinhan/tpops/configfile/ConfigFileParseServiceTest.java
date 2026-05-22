@@ -20,10 +20,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.transaction.annotation.Transactional;
 
 @SpringBootTest
-@Transactional
 class ConfigFileParseServiceTest {
 
 	@Autowired
@@ -100,33 +98,30 @@ class ConfigFileParseServiceTest {
 		assertThat(aaa002.getMaxValue()).isEqualTo(3);
 		assertThat(aaa002.getRestart()).isEqualTo("Y");
 
-		assertThat(serviceConfigRepository.findByConfigFileId(response.fileId()))
-			.filteredOn(serviceConfig -> serviceConfig.getServiceName().equals("SABA113Q"))
-			.singleElement()
-			.satisfies(serviceConfig -> {
-				assertThat(serviceConfig.getServerConfig()).isNotNull();
-				assertThat(serviceConfig.getBusinessCode()).isNotNull();
-				assertThat(serviceConfig.getBusinessCode().getCode()).isEqualTo("ABA");
-				assertThat(serviceConfig.getBusinessCode().getBusinessName()).isEqualTo("고객관리");
-			});
+			assertThat(serviceConfigRepository.findByServiceNameAndConfigFileIdWithBusinessCode("SABA113Q", response.fileId()))
+				.get()
+				.satisfies(serviceConfig -> {
+					assertThat(serviceConfig.getServerConfig()).isNotNull();
+					assertThat(serviceConfig.getBusinessCode()).isNotNull();
+					assertThat(serviceConfig.getBusinessCode().getCode()).isEqualTo("ABA");
+					assertThat(serviceConfig.getBusinessCode().getBusinessName()).isEqualTo("고객관리");
+				});
 
-		assertThat(serviceConfigRepository.findByConfigFileId(response.fileId()))
-			.filteredOn(serviceConfig -> serviceConfig.getServiceName().equals("SAAA709U4"))
-			.singleElement()
-			.satisfies(serviceConfig -> {
-				assertThat(serviceConfig.getBusinessCode()).isNotNull();
-				assertThat(serviceConfig.getBusinessCode().getCode()).isEqualTo("AAA");
-				assertThat(serviceConfig.getBusinessCode().getBusinessName()).isEqualTo("계좌관리");
-			});
+			assertThat(serviceConfigRepository.findByServiceNameAndConfigFileIdWithBusinessCode("SAAA709U4", response.fileId()))
+				.get()
+				.satisfies(serviceConfig -> {
+					assertThat(serviceConfig.getBusinessCode()).isNotNull();
+					assertThat(serviceConfig.getBusinessCode().getCode()).isEqualTo("AAA");
+					assertThat(serviceConfig.getBusinessCode().getBusinessName()).isEqualTo("계좌관리");
+				});
 
-		assertThat(serviceConfigRepository.findByConfigFileId(response.fileId()))
-			.filteredOn(serviceConfig -> serviceConfig.getServiceName().equals("XABA999Q"))
-			.singleElement()
-			.satisfies(serviceConfig -> {
-				assertThat(serviceConfig.getBusinessCode()).isNotNull();
-				assertThat(serviceConfig.getBusinessCode().getCode()).isEqualTo("ABA");
-				assertThat(serviceConfig.getBusinessCode().getBusinessName()).isEqualTo("고객관리");
-			});
+			assertThat(serviceConfigRepository.findByServiceNameAndConfigFileIdWithBusinessCode("XABA999Q", response.fileId()))
+				.get()
+				.satisfies(serviceConfig -> {
+					assertThat(serviceConfig.getBusinessCode()).isNotNull();
+					assertThat(serviceConfig.getBusinessCode().getCode()).isEqualTo("ABA");
+					assertThat(serviceConfig.getBusinessCode().getBusinessName()).isEqualTo("고객관리");
+				});
 	}
 
 	private void saveBusinessCodes() {

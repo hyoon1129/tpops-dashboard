@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import type {
   RelationshipDomain,
@@ -18,6 +18,16 @@ type SearchHit = {
   groupKey: string | null
   serverKey: string | null
   targetKey: string
+}
+
+type SelectionState = {
+  domainKey: string
+  nodeKey: string | null
+  groupKey: string | null
+  serverKey: string | null
+  inspectedKey: string
+  jumpAncestorKeys: Set<string>
+  jumpTargetKey: string
 }
 
 type RelationshipMapProps = {
@@ -40,6 +50,88 @@ const rowName = (row?: TableRow) => String(row?.NAME ?? '-')
 
 const itemKey = (section: SectionKey, row?: TableRow) => `${section}:${rowName(row)}`
 
+function findSelectionState(
+  tree: RelationshipDomain[],
+  section: SectionKey,
+  name: string,
+): SelectionState | null {
+  for (const domainEntry of tree) {
+    const domainKey = itemKey('DOMAIN', domainEntry.domain)
+    if (section === 'DOMAIN' && rowName(domainEntry.domain) === name) {
+      return {
+        domainKey,
+        nodeKey: null,
+        groupKey: null,
+        serverKey: null,
+        inspectedKey: domainKey,
+        jumpAncestorKeys: new Set(),
+        jumpTargetKey: domainKey,
+      }
+    }
+
+    for (const nodeEntry of domainEntry.nodes) {
+      const nodeKey = itemKey('NODE', nodeEntry.node)
+      if (section === 'NODE' && rowName(nodeEntry.node) === name) {
+        return {
+          domainKey,
+          nodeKey,
+          groupKey: null,
+          serverKey: null,
+          inspectedKey: nodeKey,
+          jumpAncestorKeys: new Set([domainKey]),
+          jumpTargetKey: nodeKey,
+        }
+      }
+
+      for (const groupEntry of nodeEntry.svrgroups) {
+        const groupKey = itemKey('SVRGROUP', groupEntry.svrgroup)
+        if (section === 'SVRGROUP' && rowName(groupEntry.svrgroup) === name) {
+          return {
+            domainKey,
+            nodeKey,
+            groupKey,
+            serverKey: null,
+            inspectedKey: groupKey,
+            jumpAncestorKeys: new Set([domainKey, nodeKey]),
+            jumpTargetKey: groupKey,
+          }
+        }
+
+        for (const serverEntry of groupEntry.servers) {
+          const serverKey = itemKey('SERVER', serverEntry.server)
+          if (section === 'SERVER' && rowName(serverEntry.server) === name) {
+            return {
+              domainKey,
+              nodeKey,
+              groupKey,
+              serverKey,
+              inspectedKey: serverKey,
+              jumpAncestorKeys: new Set([domainKey, nodeKey, groupKey]),
+              jumpTargetKey: serverKey,
+            }
+          }
+
+          for (const service of serverEntry.services) {
+            if (section === 'SERVICE' && rowName(service) === name) {
+              const serviceKey = itemKey('SERVICE', service)
+              return {
+                domainKey,
+                nodeKey,
+                groupKey,
+                serverKey,
+                inspectedKey: serviceKey,
+                jumpAncestorKeys: new Set([domainKey, nodeKey, groupKey, serverKey]),
+                jumpTargetKey: serviceKey,
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  return null
+}
+
 export function RelationshipMap({ itemToSelect, loading, onInspect, tree }: RelationshipMapProps) {
   const [selectedDomainKey, setSelectedDomainKey] = useState<string | null>(null)
   const [selectedNodeKey, setSelectedNodeKey] = useState<string | null>(null)
@@ -52,6 +144,17 @@ export function RelationshipMap({ itemToSelect, loading, onInspect, tree }: Rela
   const [jumpTargetKey, setJumpTargetKey] = useState<string | null>(null)
   const [jumpAncestorKeys, setJumpAncestorKeys] = useState<Set<string>>(new Set())
   const jumpRafRef = useRef<number | null>(null)
+
+  const applySelectionState = useCallback((selection: SelectionState) => {
+    setSelectedDomainKey(selection.domainKey)
+    setSelectedNodeKey(selection.nodeKey)
+    setSelectedGroupKey(selection.groupKey)
+    setSelectedServerKey(selection.serverKey)
+    setInspectedKey(selection.inspectedKey)
+    setJumpTargetKey(selection.jumpTargetKey)
+    setJumpAncestorKeys(selection.jumpAncestorKeys)
+    setJumpId((n) => n + 1)
+  }, [])
 
   const activeDomainKey = tree.some((d) => itemKey('DOMAIN', d.domain) === selectedDomainKey)
     ? selectedDomainKey
@@ -128,49 +231,12 @@ export function RelationshipMap({ itemToSelect, loading, onInspect, tree }: Rela
   useEffect(() => {
     if (!itemToSelect) return
     const { section, row } = itemToSelect
-    const name = rowName(row)
+    const selection = findSelectionState(tree, section, rowName(row))
+    if (!selection) return
 
-    for (const domainEntry of tree) {
-      const dk = itemKey('DOMAIN', domainEntry.domain)
-      if (section === 'DOMAIN' && rowName(domainEntry.domain) === name) {
-        setSelectedDomainKey(dk); setSelectedNodeKey(null); setSelectedGroupKey(null); setSelectedServerKey(null)
-        setInspectedKey(dk); setJumpTargetKey(dk); setJumpAncestorKeys(new Set()); setJumpId((n) => n + 1)
-        return
-      }
-      for (const nodeEntry of domainEntry.nodes) {
-        const nk = itemKey('NODE', nodeEntry.node)
-        if (section === 'NODE' && rowName(nodeEntry.node) === name) {
-          setSelectedDomainKey(dk); setSelectedNodeKey(nk); setSelectedGroupKey(null); setSelectedServerKey(null)
-          setInspectedKey(nk); setJumpTargetKey(nk); setJumpAncestorKeys(new Set([dk])); setJumpId((n) => n + 1)
-          return
-        }
-        for (const groupEntry of nodeEntry.svrgroups) {
-          const gk = itemKey('SVRGROUP', groupEntry.svrgroup)
-          if (section === 'SVRGROUP' && rowName(groupEntry.svrgroup) === name) {
-            setSelectedDomainKey(dk); setSelectedNodeKey(nk); setSelectedGroupKey(gk); setSelectedServerKey(null)
-            setInspectedKey(gk); setJumpTargetKey(gk); setJumpAncestorKeys(new Set([dk, nk])); setJumpId((n) => n + 1)
-            return
-          }
-          for (const serverEntry of groupEntry.servers) {
-            const sk = itemKey('SERVER', serverEntry.server)
-            if (section === 'SERVER' && rowName(serverEntry.server) === name) {
-              setSelectedDomainKey(dk); setSelectedNodeKey(nk); setSelectedGroupKey(gk); setSelectedServerKey(sk)
-              setInspectedKey(sk); setJumpTargetKey(sk); setJumpAncestorKeys(new Set([dk, nk, gk])); setJumpId((n) => n + 1)
-              return
-            }
-            for (const service of serverEntry.services) {
-              if (section === 'SERVICE' && rowName(service) === name) {
-                const svck = itemKey('SERVICE', service)
-                setSelectedDomainKey(dk); setSelectedNodeKey(nk); setSelectedGroupKey(gk); setSelectedServerKey(sk)
-                setInspectedKey(svck); setJumpTargetKey(svck); setJumpAncestorKeys(new Set([dk, nk, gk, sk])); setJumpId((n) => n + 1)
-                return
-              }
-            }
-          }
-        }
-      }
-    }
-  }, [itemToSelect])
+    const timeout = window.setTimeout(() => applySelectionState(selection), 0)
+    return () => window.clearTimeout(timeout)
+  }, [applySelectionState, itemToSelect, tree])
 
   useEffect(() => {
     if (jumpId === 0) return

@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -92,12 +93,7 @@ public class ConfigFileParseService {
 	private String sha256(byte[] bytes) {
 		try {
 			MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
-			byte[] digest = messageDigest.digest(bytes);
-			StringBuilder builder = new StringBuilder();
-			for (byte value : digest) {
-				builder.append(String.format("%02x", value));
-			}
-			return builder.toString();
+			return HexFormat.of().formatHex(messageDigest.digest(bytes));
 		} catch (NoSuchAlgorithmException exception) {
 			throw new IllegalStateException("SHA-256 algorithm is not available.", exception);
 		}

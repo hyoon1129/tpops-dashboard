@@ -8,6 +8,7 @@ services:
       MYSQL_DATABASE: ${MYSQL_DATABASE}
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      TZ: Asia/Seoul
     ports:
       - "3306:3306"
     volumes:
@@ -15,6 +16,52 @@ services:
     command:
       - --character-set-server=utf8mb4
       - --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  backend:
+    build:
+      context: ./backend
+    container_name: tpops-backend
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Seoul
+      SPRING_DATASOURCE_URL: jdbc:mysql://tpops-mysql:3306/${MYSQL_DATABASE}?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Seoul
+      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER}
+      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD}
+      JAVA_OPTS: ${JAVA_OPTS:--Xms256m -Xmx512m}
+      LOGGING_LEVEL_ROOT: ${LOGGING_LEVEL_ROOT:-INFO}
+      LOGGING_LEVEL_APP: ${LOGGING_LEVEL_APP:-INFO}
+      LOGGING_FILE_NAME: ${LOGGING_FILE_NAME:-/logs/tpops.log}
+      SPRING_JPA_DDL_AUTO: ${SPRING_JPA_DDL_AUTO:-update}
+      TPOPS_ELASTICSEARCH_ENDPOINT: ${TPOPS_ELASTICSEARCH_ENDPOINT:-}
+      TPOPS_ELASTICSEARCH_API_KEY: ${TPOPS_ELASTICSEARCH_API_KEY:-}
+      TPOPS_ELASTICSEARCH_INDEX_NAME: ${TPOPS_ELASTICSEARCH_INDEX_NAME:-tp-svclog-test}
+    volumes:
+      - tpops_backend_logs:/logs
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: tpops-frontend
+    restart: unless-stopped
+    environment:
+      TZ: Asia/Seoul
+      BACKEND_HOST: ${BACKEND_HOST:-tpops-backend}
+      BACKEND_PORT: ${BACKEND_PORT:-8080}
+      CLIENT_MAX_BODY_SIZE: ${CLIENT_MAX_BODY_SIZE:-50M}
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
 
 volumes:
   tpops_mysql_data:
+  tpops_backend_logs:

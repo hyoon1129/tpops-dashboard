@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
+  PAGE_SIZE,
   initialSearchRows,
   initialSections,
   sectionDefinitions,
@@ -16,8 +17,6 @@ import type {
   SortState,
   TableValue,
 } from '../types/config'
-
-const PAGE_SIZE = 200
 
 export const useConfigDashboard = () => {
   const [servers, setServers] = useState<ServerInfo[]>([])
@@ -378,9 +377,6 @@ export const useConfigDashboard = () => {
   const loadMoreRows = useCallback(async () => {
     let nextPage = -1
     let alreadyLast = false
-    let currentSortKey = 'id'
-    let currentSortDir: 'asc' | 'desc' = 'asc'
-
     setSections((current) => {
       const state = current[selectedSection]
       if (state.loading || state.last) {
@@ -394,15 +390,13 @@ export const useConfigDashboard = () => {
     if (alreadyLast || nextPage < 0) return
 
     const currentSort = sortState?.section === selectedSection ? sortState : null
-    currentSortKey = currentSort?.key ?? 'id'
-    currentSortDir = currentSort?.direction ?? 'asc'
 
     try {
       const result = await fetchPage(
         currentDefinition,
         nextPage,
-        currentSortKey,
-        currentSortDir,
+        currentSort?.key ?? 'id',
+        currentSort?.direction ?? 'asc',
         sectionKeyword,
       )
       if (result) {
@@ -551,7 +545,6 @@ export const useConfigDashboard = () => {
     initialDataLoading,
     loadingServers,
     loadMoreRows,
-    relationshipLoading: false,
     relationshipRows,
     relationshipTree,
     reloadDashboard,

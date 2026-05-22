@@ -1,0 +1,83 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pvc-jhy
+  namespace: tpops-jhy
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tpops-mysql-jhy
+  namespace: tpops-jhy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tpops-mysql-jhy
+  template:
+    metadata:
+      labels:
+        app: tpops-mysql-jhy
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.0
+          args:
+            - --character-set-server=utf8mb4
+            - --collation-server=utf8mb4_unicode_ci
+          env:
+            - name: TZ
+              value: Asia/Seoul
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: tpops-secret-jhy
+                  key: mysql-root-password
+            - name: MYSQL_DATABASE
+              valueFrom:
+                secretKeyRef:
+                  name: tpops-secret-jhy
+                  key: mysql-database
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: tpops-secret-jhy
+                  key: mysql-user
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: tpops-secret-jhy
+                  key: mysql-password
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+            - name: mysql-data
+              mountPath: /var/lib/mysql
+          readinessProbe:
+            exec:
+              command: ["mysqladmin", "ping", "-h", "localhost", "-uroot", "-p$(MYSQL_ROOT_PASSWORD)"]
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 6
+      volumes:
+        - name: mysql-data
+          persistentVolumeClaim:
+            claimName: mysql-pvc-jhy
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tpops-mysql-jhy
+  namespace: tpops-jhy
+spec:
+  selector:
+    app: tpops-mysql-jhy
+  ports:
+    - port: 3306
+      targetPort: 3306

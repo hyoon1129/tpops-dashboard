@@ -80,9 +80,9 @@ public class ElasticsearchConfig {
 		"&& (T(org.springframework.util.StringUtils).hasText('${tpops.elasticsearch.api-key:}') " +
 		"|| T(org.springframework.util.StringUtils).hasText('${tpops.elasticsearch.ca-cert-path:}'))"
 	)
-	public ElasticsearchClient tpopsElasticsearchClient(RestClient tpopsElasticsearchRestClient) {
+	public ElasticsearchClient tpopsElasticsearchClient(RestClient restClient) {
 		ElasticsearchTransport transport = new RestClientTransport(
-			tpopsElasticsearchRestClient,
+			restClient,
 			new JacksonJsonpMapper()
 		);
 		return new ElasticsearchClient(transport);

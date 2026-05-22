@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tpops-frontend-jhy
+  namespace: tpops-jhy
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tpops-frontend-jhy
+  template:
+    metadata:
+      labels:
+        app: tpops-frontend-jhy
+    spec:
+      containers:
+        - name: frontend
+          image: localhost:5000/tpops-frontend:latest
+          imagePullPolicy: Always
+          env:
+            - name: TZ
+              value: Asia/Seoul
+            - name: BACKEND_HOST
+              value: "tpops-backend-jhy"
+            - name: BACKEND_PORT
+              value: "8080"
+            - name: CLIENT_MAX_BODY_SIZE
+              value: "50M"
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - name: nginx-config
+              mountPath: /etc/nginx/templates/default.conf.template
+              subPath: default.conf
+      volumes:
+        - name: nginx-config
+          configMap:
+            name: tpops-nginx-config-jhy
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tpops-frontend-jhy
+  namespace: tpops-jhy
+spec:
+  type: NodePort
+  selector:
+    app: tpops-frontend-jhy
+  ports:
+    - port: 80
+      targetPort: 80
+      nodePort: 30080

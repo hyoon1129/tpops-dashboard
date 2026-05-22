@@ -1,6 +1,5 @@
 import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
-
-const PAGE_SIZE = 200
+import { PAGE_SIZE } from '../constants/dashboard'
 import { highlightedText } from '../utils/highlight'
 import { getTooltip } from '../constants/tooltips'
 import type { Column, SectionDefinition, SectionKey, SectionState, SortState, TableRow } from '../types/config'

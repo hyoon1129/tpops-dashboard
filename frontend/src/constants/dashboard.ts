@@ -8,6 +8,7 @@ import type {
   TableValue,
 } from '../types/config'
 
+export const PAGE_SIZE = 200
 export const collapsedSearchLimit = 12
 
 export const navItems: NavItem[] = [
@@ -99,40 +100,56 @@ const configLabels: Record<string, string> = {
 
 const configLabel = (key: string) => configLabels[key] ?? key.toUpperCase()
 
+const domainColumnKeys = [
+  'domainId', 'minclh', 'maxclh', 'tportno', 'racport', 'shmkey', 'maxuser',
+  'blocktime', 'maxsvg', 'maxsvr', 'maxspr', 'maxsvc', 'maxsacall', 'maxcacall',
+  'maxtotalsvg', 'maxgw', 'maxcpc', 'maxcousin', 'maxcousinsvg', 'gwchkint',
+  'gwconnectTimeout', 'nclhchktime', 'nliveinq', 'ipcperm', 'maxnode',
+]
+
+const nodeColumnKeys = [
+  'hostname', 'tmaxdir', 'appdir', 'tmaxhome', 'pathdir', 'tlogdir', 'ulogdir',
+  'slogdir', 'nodetype', 'autobackup', 'maxgwcpc', 'maxgwsvr', 'clhopt',
+]
+
+const svrgroupColumnKeys = ['nodename', 'cousin', 'loadValue', 'backup', 'envfile']
+
+const serverColumnKeys = [
+  'svgname', 'dbInfo', 'svrtype', 'minValue', 'maxValue', 'target', 'schedule',
+  'maxqcount', 'cpc', 'asqcount', 'restart', 'maxrstart', 'gperiod', 'clopt',
+]
+
+const serviceColumnKeys = ['businessName', 'svrname', 'svctime']
+
+const gatewayColumnKeys = [
+  'gwtype', 'nodename', 'portno', 'rgwportno', 'rgwaddr', 'cpc',
+  'loadValue', 'backupRgwaddr', 'backupRgwportno', 'clopt',
+]
+
 export const sectionDefinitions: SectionDefinition[] = [
   {
     label: 'DOMAIN',
     title: '도메인',
     endpoint: 'domains',
     pageEndpoint: 'domains/page',
-    columns: columns([
-      'NAME', 'domainId', 'minclh', 'maxclh', 'tportno', 'racport', 'shmkey', 'maxuser',
-      'blocktime', 'maxsvg', 'maxsvr', 'maxspr', 'maxsvc', 'maxsacall', 'maxcacall',
-      'maxtotalsvg', 'maxgw', 'maxcpc', 'maxcousin', 'maxcousinsvg', 'gwchkint',
-      'gwconnectTimeout', 'nclhchktime', 'nliveinq', 'ipcperm', 'maxnode',
-    ], { NAME: 'domainName' }),
-    toRows: (items) => items.map((item) => ({ NAME: item.domainName, ...pick(item, sectionDefinitions[0].columns.slice(1).map((column) => column.key)) })),
+    columns: columns(['NAME', ...domainColumnKeys], { NAME: 'domainName' }),
+    toRows: (items) => items.map((item) => ({ NAME: item.domainName, ...pick(item, domainColumnKeys) })),
   },
   {
     label: 'NODE',
     title: '노드',
     endpoint: 'nodes',
     pageEndpoint: 'nodes/page',
-    columns: columns([
-      'NAME', 'hostname', 'tmaxdir', 'appdir', 'tmaxhome', 'pathdir', 'tlogdir', 'ulogdir',
-      'slogdir', 'nodetype', 'autobackup', 'maxgwcpc', 'maxgwsvr', 'clhopt',
-    ], { NAME: 'nodeName' }),
-    toRows: (items) => items.map((item) => ({ NAME: item.nodeName, ...pick(item, sectionDefinitions[1].columns.slice(1).map((column) => column.key)) })),
+    columns: columns(['NAME', ...nodeColumnKeys], { NAME: 'nodeName' }),
+    toRows: (items) => items.map((item) => ({ NAME: item.nodeName, ...pick(item, nodeColumnKeys) })),
   },
   {
     label: 'SVRGROUP',
     title: '서버 그룹',
     endpoint: 'svrgroups',
     pageEndpoint: 'svrgroups/page',
-    columns: columns([
-      'NAME', 'nodename', 'cousin', 'loadValue', 'backup', 'envfile',
-    ], { NAME: 'svrgroupName' }).map((col) => col.key === 'nodename' ? { ...col, badge: true } : col),
-    toRows: (items) => items.map((item) => ({ NAME: item.svrgroupName, ...pick(item, sectionDefinitions[2].columns.slice(1).map((column) => column.key)) })),
+    columns: columns(['NAME', ...svrgroupColumnKeys], { NAME: 'svrgroupName' }).map((col) => col.key === 'nodename' ? { ...col, badge: true } : col),
+    toRows: (items) => items.map((item) => ({ NAME: item.svrgroupName, ...pick(item, svrgroupColumnKeys) })),
   },
   {
     label: 'SERVER',
@@ -147,21 +164,23 @@ export const sectionDefinitions: SectionDefinition[] = [
         'maxqcount', 'cpc', 'asqcount', 'restart', 'maxrstart', 'gperiod', 'clopt',
       ]),
     ],
-    toRows: (items) => items.map((item) => ({ NAME: item.serverName, ...pick(item, ['svgname', 'dbInfo', 'svrtype', 'minValue', 'maxValue', 'target', 'schedule', 'maxqcount', 'cpc', 'asqcount', 'restart', 'maxrstart', 'gperiod', 'clopt']) })),
+    toRows: (items) => items.map((item) => ({ NAME: item.serverName, ...pick(item, serverColumnKeys) })),
   },
   {
     label: 'SERVICE',
     title: '서비스',
     endpoint: 'services',
     pageEndpoint: 'services/page',
-    columns: columns([
-      'NAME', 'businessName', 'svrname', 'svctime',
-    ], { NAME: 'serviceName', businessName: 'businessCode.businessName' }, { businessName: '업무' }),
+    columns: columns(
+      ['NAME', ...serviceColumnKeys],
+      { NAME: 'serviceName', businessName: 'businessCode.businessName' },
+      { businessName: '업무' },
+    ),
     toRows: (items) => items.map((item) => ({
       NAME: item.serviceName,
       fileId: item.fileId,
       serverConfigId: item.serverConfigId,
-      ...pick(item, sectionDefinitions[4].columns.slice(1).map((column) => column.key)),
+      ...pick(item, serviceColumnKeys),
     })),
   },
   {
@@ -169,11 +188,8 @@ export const sectionDefinitions: SectionDefinition[] = [
     title: '게이트웨이',
     endpoint: 'gateways',
     pageEndpoint: 'gateways/page',
-    columns: columns([
-      'NAME', 'gwtype', 'nodename', 'portno', 'rgwportno', 'rgwaddr', 'cpc',
-      'loadValue', 'backupRgwaddr', 'backupRgwportno', 'clopt',
-    ], { NAME: 'gatewayName' }).map((col) => col.key === 'nodename' ? { ...col, badge: true } : col),
-    toRows: (items) => items.map((item) => ({ NAME: item.gatewayName, ...pick(item, sectionDefinitions[5].columns.slice(1).map((column) => column.key)) })),
+    columns: columns(['NAME', ...gatewayColumnKeys], { NAME: 'gatewayName' }).map((col) => col.key === 'nodename' ? { ...col, badge: true } : col),
+    toRows: (items) => items.map((item) => ({ NAME: item.gatewayName, ...pick(item, gatewayColumnKeys) })),
   },
 ]
 

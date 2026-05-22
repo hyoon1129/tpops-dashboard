@@ -44,9 +44,14 @@ out/
 .DS_Store
 *.log
 .env
+*.tar
+*.tar.gz
 
 ### TMAX config samples ###
 *.m
+
+### Local secrets ###
+k8s/*secret*.yaml
 
 ### Frontend ###
 node_modules/
@@ -54,3 +59,4 @@ dist/
 coverage/
 
 .codex-local/
+.claude/
