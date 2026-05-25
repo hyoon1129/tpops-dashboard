@@ -50,6 +50,14 @@ export const useConfigDashboard = () => {
   const currentDefinition = sectionDefinitions.find((section) => section.label === selectedSection) ?? sectionDefinitions[0]
   const currentState = sections[selectedSection]
   const selectedServer = servers.find((server) => server.serverId === selectedServerId) ?? null
+  const selectedEnvironment = selectedServer?.environment ?? ''
+  const environments = useMemo(() =>
+    Array.from(new Set(servers.map((server) => server.environment).filter(Boolean))).sort((a, b) => a.localeCompare(b)),
+  [servers])
+  const serversInSelectedEnvironment = useMemo(() => {
+    if (!selectedEnvironment) return servers
+    return servers.filter((server) => server.environment === selectedEnvironment)
+  }, [selectedEnvironment, servers])
   const isGlobalSearch = globalKeyword.trim().length > 0
   const searchResultsBySection = useMemo(() =>
     sectionDefinitions.map((section) => ({
@@ -482,6 +490,13 @@ export const useConfigDashboard = () => {
     setInitialDataLoading(true)
   }
 
+  const handleEnvironmentChange = (environment: string) => {
+    const nextServer = servers.find((server) => server.environment === environment)
+    if (nextServer) {
+      handleServerChange(nextServer.serverId)
+    }
+  }
+
   const handleGlobalKeywordChange = (keyword: string) => {
     setGlobalKeyword(keyword)
     if (keyword.trim() && activeView === '구성 트리') {
@@ -519,10 +534,6 @@ export const useConfigDashboard = () => {
     setGlobalKeyword('')
   }
 
-  const updateSelectedServer = (server: ServerInfo) => {
-    setServers((current) => current.map((item) => item.serverId === server.serverId ? server : item))
-  }
-
   const createServer = (server: ServerInfo) => {
     setServers((current) => [...current, server])
     setSelectedServerId(server.serverId)
@@ -533,12 +544,14 @@ export const useConfigDashboard = () => {
     activeView,
     currentDefinition,
     currentState,
+    environments,
     error,
     expandedSearchSections,
     filteredRows: currentState.rows,
     globalKeyword,
     globalSearchRowTotal,
     handleGlobalKeywordChange,
+    handleEnvironmentChange,
     handleServerChange,
     handleSort,
     isGlobalSearch,
@@ -556,15 +569,16 @@ export const useConfigDashboard = () => {
     selectSection,
     selectView,
     selectedSection,
+    selectedEnvironment,
     selectedServer,
     selectedServerId,
     servers,
+    serversInSelectedEnvironment,
     setSectionKeyword,
     setSidebarCollapsed,
     sidebarCollapsed,
     sortState,
     toggleSearchSection,
-    updateSelectedServer,
     createServer,
   }
 }

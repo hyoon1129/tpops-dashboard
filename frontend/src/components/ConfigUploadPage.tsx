@@ -4,7 +4,6 @@ import type { ConfigFileDetail, ConfigFileHistory, ServerInfo } from '../types/c
 type ConfigUploadPageProps = {
   onParsed: () => Promise<void>
   onServerCreate: (server: ServerInfo) => void
-  onServerUpdate: (server: ServerInfo) => void
   selectedServer: ServerInfo | null
 }
 
@@ -29,16 +28,13 @@ const formatDateTime = (value: string | null) => {
   })
 }
 
-export function ConfigUploadPage({ onParsed, onServerCreate, onServerUpdate, selectedServer }: ConfigUploadPageProps) {
+export function ConfigUploadPage({ onParsed, onServerCreate, selectedServer }: ConfigUploadPageProps) {
   const inputRef = useRef<HTMLInputElement | null>(null)
-  const [serverName, setServerName] = useState(selectedServer?.serverName ?? '')
-  const [environment, setEnvironment] = useState(selectedServer?.environment ?? '')
   const [history, setHistory] = useState<ConfigFileHistory[]>([])
   const [fileDetail, setFileDetail] = useState<ConfigFileDetail | null>(null)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [loadingHistory, setLoadingHistory] = useState(false)
   const [loadingFileDetail, setLoadingFileDetail] = useState(false)
-  const [savingServer, setSavingServer] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -115,41 +111,6 @@ export function ConfigUploadPage({ onParsed, onServerCreate, onServerUpdate, sel
     }
   }
 
-  const saveServerDisplay = async () => {
-    if (!selectedServer) {
-      return
-    }
-    if (!serverName.trim()) {
-      setError('대시보드 이름을 입력해주세요.')
-      return
-    }
-
-    try {
-      setSavingServer(true)
-      setMessage(null)
-      setError(null)
-      const response = await fetch(`/api/servers/${selectedServer.serverId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          serverName: serverName.trim(),
-          serverIp: selectedServer.serverIp,
-          environment: environment.trim(),
-          description: selectedServer.description,
-        }),
-      })
-      if (!response.ok) {
-        throw new Error('대시보드 이름을 저장하지 못했습니다.')
-      }
-      onServerUpdate((await response.json()) as ServerInfo)
-      setMessage('대시보드 표시 설정을 저장했습니다.')
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : '알 수 없는 오류가 발생했습니다.')
-    } finally {
-      setSavingServer(false)
-    }
-  }
-
   const openFileDetail = async (file: ConfigFileHistory) => {
     if (!selectedServer) {
       return
@@ -171,8 +132,12 @@ export function ConfigUploadPage({ onParsed, onServerCreate, onServerUpdate, sel
   }
 
   const createServer = async () => {
+    if (!newEnvironment.trim()) {
+      setError('환경을 입력해주세요.')
+      return
+    }
     if (!newServerName.trim()) {
-      setError('대시보드 이름을 입력해주세요.')
+      setError('서버 구분을 입력해주세요.')
       return
     }
     try {
@@ -192,6 +157,10 @@ export function ConfigUploadPage({ onParsed, onServerCreate, onServerUpdate, sel
         throw new Error('서버를 등록하지 못했습니다.')
       }
       onServerCreate((await response.json()) as ServerInfo)
+      setMessage('환경/서버가 등록됐습니다.')
+      setNewEnvironment('')
+      setNewServerIp('')
+      setNewServerName('')
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : '알 수 없는 오류가 발생했습니다.')
     } finally {
@@ -211,7 +180,7 @@ export function ConfigUploadPage({ onParsed, onServerCreate, onServerUpdate, sel
           <div className="upload-section-row2">
             <label htmlFor="new-server-env" className="upload-field-env">환경</label>
             <label htmlFor="new-server-ip" className="upload-field-env">서버 IP</label>
-            <label htmlFor="new-server-name" className="upload-field-name">대시보드 이름 *</label>
+            <label htmlFor="new-server-name" className="upload-field-name">서버 구분 *</label>
           </div>
           <div className="upload-inline-row">
             <input
@@ -219,7 +188,7 @@ export function ConfigUploadPage({ onParsed, onServerCreate, onServerUpdate, sel
               className="upload-field-env"
               value={newEnvironment}
               onChange={(e) => setNewEnvironment(e.target.value)}
-              placeholder="예: 개발"
+              placeholder="예: 계정계"
             />
             <input
               id="new-server-ip"
@@ -233,12 +202,12 @@ export function ConfigUploadPage({ onParsed, onServerCreate, onServerUpdate, sel
               className="upload-field-name"
               value={newServerName}
               onChange={(e) => setNewServerName(e.target.value)}
-              placeholder="예: 계정계 테스트"
+              placeholder="예: 테스트"
             />
             <button
               type="button"
               onClick={createServer}
-              disabled={!newServerName.trim() || creatingServer}
+              disabled={!newEnvironment.trim() || !newServerName.trim() || creatingServer}
             >
               {creatingServer ? '등록 중…' : '서버 등록'}
             </button>
@@ -249,43 +218,48 @@ export function ConfigUploadPage({ onParsed, onServerCreate, onServerUpdate, sel
     )
   }
 
-  const serverDisplayChanged = serverName.trim() !== selectedServer.serverName
-    || environment.trim() !== (selectedServer.environment ?? '')
-
   return (
     <div className="config-upload-page">
       <div className="upload-settings-row">
         <section className="upload-settings-section">
           <div className="upload-section-header">
-            <span>DISPLAY</span>
-            <h3>대시보드 표시 설정</h3>
-            <p>상단에 표시되는 환경과 이름을 수정합니다.</p>
+            <span>NEW TARGET</span>
+            <h3>환경/서버 등록</h3>
+            <p>새 환경 또는 서버 구분을 추가한 뒤 해당 서버에 설정 파일을 업로드합니다.</p>
           </div>
           <div className="upload-section-row2">
-            <label htmlFor="upload-env" className="upload-field-env">환경</label>
-            <label htmlFor="upload-name" className="upload-field-name">대시보드 이름</label>
+            <label htmlFor="new-server-env" className="upload-field-env">환경</label>
+            <label htmlFor="new-server-ip" className="upload-field-env">서버 IP</label>
+            <label htmlFor="new-server-name" className="upload-field-name">서버 구분 *</label>
           </div>
           <div className="upload-inline-row">
             <input
-              id="upload-env"
+              id="new-server-env"
               className="upload-field-env"
-              value={environment}
-              onChange={(event) => setEnvironment(event.target.value)}
-              placeholder="예: 개발"
+              value={newEnvironment}
+              onChange={(event) => setNewEnvironment(event.target.value)}
+              placeholder="예: 계정계"
             />
             <input
-              id="upload-name"
+              id="new-server-ip"
+              className="upload-field-env"
+              value={newServerIp}
+              onChange={(event) => setNewServerIp(event.target.value)}
+              placeholder="예: 10.0.0.1"
+            />
+            <input
+              id="new-server-name"
               className="upload-field-name"
-              value={serverName}
-              onChange={(event) => setServerName(event.target.value)}
-              placeholder="예: 계정계 테스트"
+              value={newServerName}
+              onChange={(event) => setNewServerName(event.target.value)}
+              placeholder="예: 테스트"
             />
             <button
               type="button"
-              onClick={saveServerDisplay}
-              disabled={!serverDisplayChanged || !serverName.trim() || savingServer}
+              onClick={createServer}
+              disabled={!newEnvironment.trim() || !newServerName.trim() || creatingServer}
             >
-              {savingServer ? '저장 중' : '저장'}
+              {creatingServer ? '등록 중…' : '서버 등록'}
             </button>
           </div>
         </section>
@@ -293,8 +267,8 @@ export function ConfigUploadPage({ onParsed, onServerCreate, onServerUpdate, sel
         <section className="upload-settings-section">
           <div className="upload-section-header">
             <span>CONFIG FILE</span>
-            <h3>m 파일 업로드</h3>
-            <p>설정 파일을 업로드하면 파싱 후 대시보드 데이터가 갱신됩니다.</p>
+            <h3>{selectedServer.environment} / {selectedServer.serverName}</h3>
+            <p>선택한 환경/서버의 설정 파일을 업로드하면 파싱 후 대시보드 데이터가 갱신됩니다.</p>
           </div>
           <p className="upload-section-hint">*.m 형식의 파일만 허용됩니다.</p>
           <div className="upload-inline-row">

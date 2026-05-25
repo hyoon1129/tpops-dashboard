@@ -1,15 +1,25 @@
 import type { ServerInfo } from '../types/config'
 
 type WorkspaceHeaderProps = {
+  environments: string[]
   globalKeyword: string
+  onEnvironmentChange: (environment: string) => void
   onGlobalKeywordChange: (keyword: string) => void
+  onServerChange: (serverId: number) => void
+  selectedEnvironment: string
   selectedServer: ServerInfo | null
+  servers: ServerInfo[]
 }
 
 export function WorkspaceHeader({
+  environments,
   globalKeyword,
+  onEnvironmentChange,
   onGlobalKeywordChange,
+  onServerChange,
+  selectedEnvironment,
   selectedServer,
+  servers,
 }: WorkspaceHeaderProps) {
   return (
     <header className="workspace-header">
@@ -19,6 +29,38 @@ export function WorkspaceHeader({
       </div>
 
       <div className="header-tools" aria-label="조회 조건">
+        <div className="header-select-group">
+          <label htmlFor="environment-select">환경</label>
+          <select
+            id="environment-select"
+            value={selectedEnvironment}
+            onChange={(event) => onEnvironmentChange(event.target.value)}
+            disabled={environments.length === 0}
+          >
+            {environments.map((environment) => (
+              <option key={environment} value={environment}>
+                {environment}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <div className="header-select-group server-select-group">
+          <label htmlFor="server-select">서버</label>
+          <select
+            id="server-select"
+            value={selectedServer?.serverId ?? ''}
+            onChange={(event) => onServerChange(Number(event.target.value))}
+            disabled={servers.length === 0}
+          >
+            {servers.map((server) => (
+              <option key={server.serverId} value={server.serverId}>
+                {server.serverName}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div className="search-box">
           <span aria-hidden="true">/</span>
           <input

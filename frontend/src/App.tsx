@@ -121,9 +121,14 @@ function App() {
 
       <section className="workspace">
         <WorkspaceHeader
+          environments={dashboard.environments}
           globalKeyword={dashboard.globalKeyword}
+          onEnvironmentChange={dashboard.handleEnvironmentChange}
           onGlobalKeywordChange={handleGlobalKeywordChange}
+          onServerChange={dashboard.handleServerChange}
+          selectedEnvironment={dashboard.selectedEnvironment}
           selectedServer={dashboard.selectedServer}
+          servers={dashboard.serversInSelectedEnvironment}
         />
 
         {dashboard.activeView === '설정 목록' && !dashboard.isGlobalSearch ? (
@@ -210,7 +215,6 @@ function App() {
               key={dashboard.selectedServerId ?? 'no-server'}
               onParsed={dashboard.reloadDashboard}
               onServerCreate={dashboard.createServer}
-              onServerUpdate={dashboard.updateSelectedServer}
               selectedServer={dashboard.selectedServer}
             />
           ) : null}
