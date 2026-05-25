@@ -78,6 +78,14 @@ class ConfigFileParseServiceTest {
 		assertThat(serviceConfigRepository.findByConfigFileId(response.fileId())).hasSize(19);
 		assertThat(gatewayConfigRepository.findByConfigFileId(response.fileId())).hasSize(2);
 
+		assertThat(domainConfigRepository.findByConfigFileId(response.fileId()))
+			.singleElement()
+			.satisfies(domainConfig -> {
+				assertThat(domainConfig.getDomainName()).isEqualTo("TPDOM01");
+				assertThat(domainConfig.getMaxuser()).isEqualTo(300);
+				assertThat(domainConfig.getIpcperm()).isEqualTo("0600");
+			});
+
 		NodeConfig cor01 = nodeConfigRepository.findByConfigFileId(response.fileId()).stream()
 			.filter(nodeConfig -> nodeConfig.getNodeName().equals("COR01"))
 			.findFirst()
@@ -98,30 +106,61 @@ class ConfigFileParseServiceTest {
 		assertThat(aaa002.getMaxValue()).isEqualTo(3);
 		assertThat(aaa002.getRestart()).isEqualTo("Y");
 
-			assertThat(serviceConfigRepository.findByServiceNameAndConfigFileIdWithBusinessCode("SABA113Q", response.fileId()))
-				.get()
-				.satisfies(serviceConfig -> {
-					assertThat(serviceConfig.getServerConfig()).isNotNull();
-					assertThat(serviceConfig.getBusinessCode()).isNotNull();
-					assertThat(serviceConfig.getBusinessCode().getCode()).isEqualTo("ABA");
-					assertThat(serviceConfig.getBusinessCode().getBusinessName()).isEqualTo("고객관리");
-				});
+		assertThat(svrgroupConfigRepository.findByConfigFileId(response.fileId()).stream()
+			.filter(svrgroupConfig -> svrgroupConfig.getSvrgroupName().equals("AAA_SVG"))
+			.findFirst())
+			.get()
+			.satisfies(svrgroupConfig -> {
+				assertThat(svrgroupConfig.getNodeConfig()).isNotNull();
+				assertThat(svrgroupConfig.getNodename()).isEqualTo("COR01");
+				assertThat(svrgroupConfig.getEnvfile()).isEqualTo("/app/tmax/env/default.env");
+			});
 
-			assertThat(serviceConfigRepository.findByServiceNameAndConfigFileIdWithBusinessCode("SAAA709U4", response.fileId()))
-				.get()
-				.satisfies(serviceConfig -> {
-					assertThat(serviceConfig.getBusinessCode()).isNotNull();
-					assertThat(serviceConfig.getBusinessCode().getCode()).isEqualTo("AAA");
-					assertThat(serviceConfig.getBusinessCode().getBusinessName()).isEqualTo("계좌관리");
-				});
+		assertThat(serviceConfigRepository.findByServiceNameAndConfigFileIdWithBusinessCode("SABA113Q", response.fileId()))
+			.get()
+			.satisfies(serviceConfig -> {
+				assertThat(serviceConfig.getServerConfig()).isNotNull();
+				assertThat(serviceConfig.getBusinessCode()).isNotNull();
+				assertThat(serviceConfig.getBusinessCode().getCode()).isEqualTo("ABA");
+				assertThat(serviceConfig.getBusinessCode().getBusinessName()).isEqualTo("고객관리");
+			});
 
-			assertThat(serviceConfigRepository.findByServiceNameAndConfigFileIdWithBusinessCode("XABA999Q", response.fileId()))
-				.get()
-				.satisfies(serviceConfig -> {
-					assertThat(serviceConfig.getBusinessCode()).isNotNull();
-					assertThat(serviceConfig.getBusinessCode().getCode()).isEqualTo("ABA");
-					assertThat(serviceConfig.getBusinessCode().getBusinessName()).isEqualTo("고객관리");
-				});
+		assertThat(serviceConfigRepository.findByServiceNameAndConfigFileIdWithBusinessCode("SAAA709U4", response.fileId()))
+			.get()
+			.satisfies(serviceConfig -> {
+				assertThat(serviceConfig.getBusinessCode()).isNotNull();
+				assertThat(serviceConfig.getBusinessCode().getCode()).isEqualTo("AAA");
+				assertThat(serviceConfig.getBusinessCode().getBusinessName()).isEqualTo("계좌관리");
+			});
+
+		assertThat(serviceConfigRepository.findByServiceNameAndConfigFileIdWithBusinessCode("XABA999Q", response.fileId()))
+			.get()
+			.satisfies(serviceConfig -> {
+				assertThat(serviceConfig.getBusinessCode()).isNotNull();
+				assertThat(serviceConfig.getBusinessCode().getCode()).isEqualTo("ABA");
+				assertThat(serviceConfig.getBusinessCode().getBusinessName()).isEqualTo("고객관리");
+			});
+
+		assertThat(serviceConfigRepository.findByServiceNameAndConfigFileIdWithBusinessCode("SAAA101Q", response.fileId()))
+			.get()
+			.satisfies(serviceConfig -> {
+				assertThat(serviceConfig.getSvrname()).isEqualTo("AAA001SVR");
+				assertThat(serviceConfig.getServerConfig()).isNotNull();
+			});
+
+		assertThat(serviceConfigRepository.findByServiceNameAndConfigFileIdWithBusinessCode("SAAA103Q", response.fileId()))
+			.get()
+			.satisfies(serviceConfig -> assertThat(serviceConfig.getSvctime()).isEqualTo(99));
+
+		assertThat(gatewayConfigRepository.findByConfigFileId(response.fileId()).stream()
+			.filter(gatewayConfig -> gatewayConfig.getGatewayName().equals("GW_COR01"))
+			.findFirst())
+			.get()
+			.satisfies(gatewayConfig -> {
+				assertThat(gatewayConfig.getGwtype()).isEqualTo("TMAX");
+				assertThat(gatewayConfig.getNodename()).isEqualTo("COR01");
+				assertThat(gatewayConfig.getCpc()).isEqualTo(2);
+			});
 	}
 
 	private void saveBusinessCodes() {
@@ -135,9 +174,11 @@ class ConfigFileParseServiceTest {
 	private MockMultipartFile sampleConfigFile() throws Exception {
 		String content = """
 			*DOMAIN
+			DEFAULT     MAXUSER = 300,
+			            IPCPERM = 0600
+
 			TPDOM01     DOMAINID = 1,
 			            SHMKEY = 77990,
-			            MAXUSER = 300,
 			            MINCLH = 1,
 			            MAXCLH = 3,
 			            TPORTNO = 8888,
@@ -158,7 +199,6 @@ class ConfigFileParseServiceTest {
 			            GWCONNECT_TIMEOUT = 10,
 			            NCLHCHKTIME = 60,
 			            NLIVEINQ = 30,
-			            IPCPERM = 0600,
 			            MAXNODE = 2
 
 			*NODE
@@ -182,7 +222,8 @@ class ConfigFileParseServiceTest {
 			            APPDIR = "/app/tmax/cor02/appbin"
 
 			*SVRGROUP
-			AAA_SVG     NODENAME = COR01, COUSIN = ABA_SVG, LOAD = 1, BACKUP = AAA_BAK_SVG
+			DEFAULT     NODENAME = COR01, ENVFILE = "/app/tmax/env/default.env"
+			AAA_SVG     COUSIN = ABA_SVG, LOAD = 1, BACKUP = AAA_BAK_SVG
 			ABA_SVG     NODENAME = COR01, COUSIN = AAA_SVG, LOAD = 2, BACKUP = ABA_BAK_SVG
 			ORD_SVG     NODENAME = COR02, COUSIN = PAY_SVG, LOAD = 1, BACKUP = ORD_BAK_SVG
 			PAY_SVG     NODENAME = COR02, COUSIN = ORD_SVG, LOAD = 2, BACKUP = PAY_BAK_SVG
@@ -199,10 +240,11 @@ class ConfigFileParseServiceTest {
 			COM001SVR   SVGNAME = COM_SVG, SVRTYPE = STD, MIN = 1, MAX = 4, TARGET = "com001", SCHEDULE = FA
 
 			*SERVICE
+			DEFAULT     SVRNAME = AAA001SVR, SVCTIME = 99
 			SAAA100U    SVRNAME = AAA001SVR, SVCTIME = 30
-			SAAA101Q    SVRNAME = AAA001SVR, SVCTIME = 20
+			SAAA101Q    SVCTIME = 20
 			SAAA102U    SVRNAME = AAA002SVR, SVCTIME = 30
-			SAAA103Q    SVRNAME = AAA002SVR, SVCTIME = 20
+			SAAA103Q    SVRNAME = AAA002SVR
 			SAAA709U4   SVRNAME = AAA002SVR, SVCTIME = 30
 			XABA999Q    SVRNAME = ABA001SVR, SVCTIME = 30
 			SABA110U    SVRNAME = ABA001SVR, SVCTIME = 30
@@ -220,7 +262,8 @@ class ConfigFileParseServiceTest {
 			SCOM901U    SVRNAME = COM001SVR, SVCTIME = 20
 
 			*GATEWAY
-			GW_COR01    GWTYPE = TMAX, NODENAME = COR01, PORTNO = 9101, RGWPORTNO = 9201, RGWADDR = "10.10.20.11"
+			DEFAULT     GWTYPE = TMAX, NODENAME = COR01, CPC = 2
+			GW_COR01    PORTNO = 9101, RGWPORTNO = 9201, RGWADDR = "10.10.20.11"
 			GW_COR02    GWTYPE = TMAX, NODENAME = COR02, PORTNO = 9102, RGWPORTNO = 9301, RGWADDR = "10.10.30.11"
 			""";
 		return new MockMultipartFile("file", "tpdom01.m", "text/plain", content.getBytes(StandardCharsets.UTF_8));

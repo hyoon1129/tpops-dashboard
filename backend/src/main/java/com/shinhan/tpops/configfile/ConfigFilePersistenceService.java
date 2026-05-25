@@ -98,8 +98,12 @@ class ConfigFilePersistenceService {
 
 	private Map<String, DomainConfig> saveDomains(ConfigFile configFile,
 		ParsedTmaxConfig parsedConfig) {
-		List<DomainConfig> domainConfigs = parsedConfig.entries(ConfigSection.DOMAIN).stream()
-			.map(entry -> new DomainConfig(configFile, entry.name(), entry.values(),
+		List<ParsedConfigEntry> entries = parsedConfig.entries(ConfigSection.DOMAIN);
+		ParsedConfigEntry defaultEntry = findDefault(entries);
+		List<DomainConfig> domainConfigs = entries.stream()
+			.filter(entry -> !isDefault(entry))
+			.map(entry -> new DomainConfig(configFile, entry.name(),
+				mergedValues(defaultEntry, entry),
 				entry.startLine(), entry.endLine()))
 			.toList();
 		return domainConfigRepository.saveAll(domainConfigs).stream()
@@ -108,11 +112,12 @@ class ConfigFilePersistenceService {
 
 	private Map<String, NodeConfig> saveNodes(ConfigFile configFile, ParsedTmaxConfig parsedConfig,
 		Map<String, DomainConfig> domains) {
-		ParsedConfigEntry defaultEntry = findDefault(parsedConfig.entries(ConfigSection.NODE));
+		List<ParsedConfigEntry> entries = parsedConfig.entries(ConfigSection.NODE);
+		ParsedConfigEntry defaultEntry = findDefault(entries);
 		DomainConfig domainConfig =
 			domains.size() == 1 ? domains.values().iterator().next() : null;
 
-		List<NodeConfig> nodeConfigs = parsedConfig.entries(ConfigSection.NODE).stream()
+		List<NodeConfig> nodeConfigs = entries.stream()
 			.filter(entry -> !isDefault(entry))
 			.map(entry -> new NodeConfig(configFile, domainConfig, entry.name(),
 				mergedValues(defaultEntry, entry), entry.startLine(), entry.endLine()))
@@ -123,14 +128,18 @@ class ConfigFilePersistenceService {
 
 	private Map<String, SvrgroupConfig> saveSvrgroups(ConfigFile configFile,
 		ParsedTmaxConfig parsedConfig, Map<String, NodeConfig> nodes) {
-		List<SvrgroupConfig> svrgroupConfigs = parsedConfig.entries(ConfigSection.SVRGROUP).stream()
+		List<ParsedConfigEntry> entries = parsedConfig.entries(ConfigSection.SVRGROUP);
+		ParsedConfigEntry defaultEntry = findDefault(entries);
+		List<SvrgroupConfig> svrgroupConfigs = entries.stream()
+			.filter(entry -> !isDefault(entry))
 			.map(entry -> {
-				NodeConfig nodeConfig = nodes.get(entry.values().get("NODENAME"));
+				Map<String, String> values = mergedValues(defaultEntry, entry);
+				NodeConfig nodeConfig = nodes.get(values.get("NODENAME"));
 				if (nodeConfig == null) {
 					log.warn("SVRGROUP {} references unknown NODENAME: {}", entry.name(),
-						entry.values().get("NODENAME"));
+						values.get("NODENAME"));
 				}
-				return new SvrgroupConfig(configFile, nodeConfig, entry.name(), entry.values(),
+				return new SvrgroupConfig(configFile, nodeConfig, entry.name(), values,
 					entry.startLine(), entry.endLine());
 			})
 			.toList();
@@ -140,8 +149,9 @@ class ConfigFilePersistenceService {
 
 	private Map<String, ServerConfig> saveServers(ConfigFile configFile,
 		ParsedTmaxConfig parsedConfig, Map<String, SvrgroupConfig> svrgroups) {
-		ParsedConfigEntry defaultEntry = findDefault(parsedConfig.entries(ConfigSection.SERVER));
-		List<ServerConfig> serverConfigs = parsedConfig.entries(ConfigSection.SERVER).stream()
+		List<ParsedConfigEntry> entries = parsedConfig.entries(ConfigSection.SERVER);
+		ParsedConfigEntry defaultEntry = findDefault(entries);
+		List<ServerConfig> serverConfigs = entries.stream()
 			.filter(entry -> !isDefault(entry))
 			.map(entry -> {
 				Map<String, String> values = mergedValues(defaultEntry, entry);
@@ -160,31 +170,43 @@ class ConfigFilePersistenceService {
 
 	private void saveServices(ConfigFile configFile, ParsedTmaxConfig parsedConfig,
 		Map<String, ServerConfig> servers) {
-		List<ServiceConfig> serviceConfigs = parsedConfig.entries(ConfigSection.SERVICE).stream()
-			.map(entry -> new ServiceConfig(
-				configFile,
-				servers.get(entry.values().get("SVRNAME")),
-				findBusinessCode(entry.name()),
-				entry.name(),
-				entry.values(),
-				entry.startLine(),
-				entry.endLine()
-			))
+		List<ParsedConfigEntry> entries = parsedConfig.entries(ConfigSection.SERVICE);
+		ParsedConfigEntry defaultEntry = findDefault(entries);
+		List<ServiceConfig> serviceConfigs = entries.stream()
+			.filter(entry -> !isDefault(entry))
+			.map(entry -> {
+				Map<String, String> values = mergedValues(defaultEntry, entry);
+				return new ServiceConfig(
+					configFile,
+					servers.get(values.get("SVRNAME")),
+					findBusinessCode(entry.name()),
+					entry.name(),
+					values,
+					entry.startLine(),
+					entry.endLine()
+				);
+			})
 			.toList();
 		serviceConfigRepository.saveAll(serviceConfigs);
 	}
 
 	private void saveGateways(ConfigFile configFile, ParsedTmaxConfig parsedConfig,
 		Map<String, NodeConfig> nodes) {
-		List<GatewayConfig> gatewayConfigs = parsedConfig.entries(ConfigSection.GATEWAY).stream()
-			.map(entry -> new GatewayConfig(
-				configFile,
-				nodes.get(entry.values().get("NODENAME")),
-				entry.name(),
-				entry.values(),
-				entry.startLine(),
-				entry.endLine()
-			))
+		List<ParsedConfigEntry> entries = parsedConfig.entries(ConfigSection.GATEWAY);
+		ParsedConfigEntry defaultEntry = findDefault(entries);
+		List<GatewayConfig> gatewayConfigs = entries.stream()
+			.filter(entry -> !isDefault(entry))
+			.map(entry -> {
+				Map<String, String> values = mergedValues(defaultEntry, entry);
+				return new GatewayConfig(
+					configFile,
+					nodes.get(values.get("NODENAME")),
+					entry.name(),
+					values,
+					entry.startLine(),
+					entry.endLine()
+				);
+			})
 			.toList();
 		gatewayConfigRepository.saveAll(gatewayConfigs);
 	}

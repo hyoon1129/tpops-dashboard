@@ -42,7 +42,7 @@ public class ServiceConfig {
 	@Column(name = "service_name", nullable = false, length = 255)
 	private String serviceName;
 
-	@Column(nullable = false, length = 255)
+	@Column(length = 255)
 	private String svrname;
 
 	private Integer svctime;
