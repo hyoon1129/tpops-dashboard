@@ -20,10 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.server.ResponseStatusException;
 
 @Service
 @RequiredArgsConstructor
@@ -44,10 +42,10 @@ public class ConfigSearchService {
 		}
 
 		ConfigFile configFile = configFileRepository.findByServerInfoIdAndCurrentTrue(serverId)
-			.orElseThrow(() -> new ResponseStatusException(
-				HttpStatus.NOT_FOUND,
-				"Current config file not found for serverId=" + serverId
-			));
+			.orElse(null);
+		if (configFile == null) {
+			return List.of();
+		}
 
 		List<SearchResultResponse> results = new ArrayList<>();
 		String normalizedKeyword = keyword.toLowerCase(Locale.ROOT);
